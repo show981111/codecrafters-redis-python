@@ -15,7 +15,13 @@ def main():
         conn_sock, client_addr = server_socket.accept()  # wait for client
         print(f"Accepted the request from {client_addr}")
         with conn_sock:
-            conn_sock.sendall("+PONG\r\n".encode())
+            while True:
+                data = conn_sock.recv(10)
+                if not data:
+                    break
+                conn_sock.sendall(
+                    "+PONG\r\n".encode()
+                )  # Unlike send(), this method continues to send data from bytes until either all data has been sent or an error occurs
 
 
 if __name__ == "__main__":
