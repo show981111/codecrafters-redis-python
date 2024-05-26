@@ -16,7 +16,8 @@ def main():
         print(f"Accepted the request from {client_addr}")
         with conn_sock:
             while True:
-                data = conn_sock.recv(10)
+                data = conn_sock.recv(1024)
+                print(data)
                 if not data:
                     break
                 conn_sock.sendall(
