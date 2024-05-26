@@ -1,29 +1,40 @@
 # Uncomment this to pass the first stage
 import socket
+import asyncio
 
 
-def main():
+async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    address = writer.get_extra_info("peername")
+    print(f"Connected to {address}")
+
+    while True:
+        data = await reader.read(1024)  # Read up to 100 bytes
+        # message = data.decode()
+        if not data:
+            break
+        print(f"Received {data!r} from {address}")
+        writer.write("+PONG\r\n".encode())
+        await writer.drain()
+
+    print(f"Closed connection to {address}")
+    writer.close()
+    await writer.wait_closed()
+
+
+async def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
 
-    # Uncomment this to pass the first stage
-    #
-    server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
+    server = await asyncio.start_server(
+        handle_client, "localhost", 6379, reuse_port=True
+    )
 
-    print("Listening from port 6379")
-    while True:
-        conn_sock, client_addr = server_socket.accept()  # wait for client
-        print(f"Accepted the request from {client_addr}")
-        with conn_sock:
-            while True:
-                data = conn_sock.recv(1024)
-                print(data)
-                if not data:
-                    break
-                conn_sock.sendall(
-                    "+PONG\r\n".encode()
-                )  # Unlike send(), this method continues to send data from bytes until either all data has been sent or an error occurs
+    address = server.sockets[0].getsockname()
+    print(f"Serving on {address}")
+
+    async with server:
+        await server.serve_forever()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
