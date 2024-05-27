@@ -1,4 +1,5 @@
 # Uncomment this to pass the first stage
+import argparse
 import asyncio
 
 from app.resp_parser import RespParser, RespParserError
@@ -34,8 +35,17 @@ async def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
 
+    parser = argparse.ArgumentParser(
+        description="Simple server that uses a specified port."
+    )
+    parser.add_argument(
+        "--port", type=int, required=True, help="Port number to run the server on"
+    )
+
+    args = parser.parse_args()
+
     server = await asyncio.start_server(
-        handle_client, "localhost", 6379, reuse_port=True
+        handle_client, "localhost", args.port, reuse_port=True
     )
 
     address = server.sockets[0].getsockname()
