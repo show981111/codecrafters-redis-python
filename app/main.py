@@ -2,33 +2,7 @@
 import argparse
 import asyncio
 
-from app.resp_parser import RespParser, RespParserError
-from app.request_handler import RequestHandler
-
-
-async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-    address = writer.get_extra_info("peername")
-    print(f"Connected to {address}")
-    data = b""
-    request_handler = RequestHandler()
-    while True:
-        data += await reader.read(1024)  # Read up to 1024 bytes
-        if not data:
-            break
-        try:
-            parsed, _ = RespParser.decode(data)
-            print(f"Received {parsed} from {address}")
-
-            ret = request_handler.handle(parsed)
-            writer.write(ret.encode())
-            await writer.drain()
-            data = b""
-        except RespParserError as err:
-            pass
-
-    print(f"Closed connection to {address}")
-    writer.close()
-    await writer.wait_closed()
+from app.server import Server
 
 
 async def main():
@@ -41,18 +15,27 @@ async def main():
     parser.add_argument(
         "--port", type=int, default=6379, help="Port number to run the server on"
     )
+    parser.add_argument(
+        "--replicaof",
+        type=str,
+        required=False,
+        help='Replica of host. Usage: "<MASTER_HOST> <MASTER_PORT>"',
+    )
 
     args = parser.parse_args()
 
-    server = await asyncio.start_server(
-        handle_client, "localhost", args.port, reuse_port=True
+    role = "master"
+    master_host = None
+    master_port = None
+    if args.replicaof is not None:
+        role = "slave"
+        master_host = args.replicaof.split(" ")[0]
+        master_port = args.replicaof.split(" ")[1]
+    server = Server(
+        port=args.port, role=role, master_host=master_host, master_port=master_port
     )
 
-    address = server.sockets[0].getsockname()
-    print(f"Serving on {address}")
-
-    async with server:
-        await server.serve_forever()
+    await server.start()
 
 
 if __name__ == "__main__":

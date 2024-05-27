@@ -3,8 +3,19 @@ from app.container import Container
 
 
 class RequestHandler:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        role: str = "master",
+        master_host: str | None = None,
+        master_port: int | None = None,
+    ) -> None:
         self.container = Container()
+        self.role = role
+        if role == "slave":
+            if master_host is None or master_port is None:
+                raise ValueError("If it is a slave, should specify the master")
+            self.master_host = master_host
+            self.master_port = master_port
 
     def handle(self, input: list | int | str) -> str:
         if isinstance(input, list) and isinstance(input[0], str):
@@ -29,5 +40,5 @@ class RequestHandler:
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
                     if input[1] == "replication":
-                        return RespParser.encode("role:master", type="bulk")
+                        return RespParser.encode(f"role:{self.role}", type="bulk")
         raise ValueError("Unknown")
