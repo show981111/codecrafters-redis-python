@@ -19,6 +19,9 @@ class Container:
             datetime.now() - self.kv[key].created_at
         ).total_seconds() > self.kv[key].expiry:
             return "-1"
+        print(f"Duration: {(
+            datetime.now() - self.kv[key].created_at
+        ).total_seconds()} and expiry = {self.kv[key].expiry}")
         return self.kv[key].value
 
     def set(self, key, value, expiry=-1):  # expiry input is in ms
