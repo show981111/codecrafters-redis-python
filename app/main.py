@@ -39,13 +39,13 @@ async def main():
         description="Simple server that uses a specified port."
     )
     parser.add_argument(
-        "--port", type=int, required=True, help="Port number to run the server on"
+        "--port", type=int, default=6379, help="Port number to run the server on"
     )
 
     args = parser.parse_args()
 
     server = await asyncio.start_server(
-        handle_client, "localhost", int(args.port), reuse_port=True
+        handle_client, "localhost", args.port, reuse_port=True
     )
 
     address = server.sockets[0].getsockname()
