@@ -2,7 +2,7 @@ class RespParser:
     @staticmethod
     def encode(data: str | int | bytes | list | None) -> str:
         if data is None:
-            return "$-1\r\n"
+            return f"$-1\r\n"
         elif isinstance(data, str):
             return f"+{data}\r\n"
         elif isinstance(data, int):
