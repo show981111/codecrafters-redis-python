@@ -48,7 +48,13 @@ class RequestHandler:
                         raise ValueError("Invalid usage of GET")
                     if input[1] == "replication":
                         return RespParser.encode(
-                            f"role:{self.role}\nmaster_replid:{self.master_replid}\nmaster_repl_offset:{self.master_repl_offset}",
+                            self.get_info(),
                             type="bulk",
                         )
         raise ValueError("Unknown")
+
+    def get_info(self) -> str:
+        if self.role == "slave":
+            return f"role:{self.role}"
+        else:
+            return f"role:{self.role}\nmaster_replid:{self.master_replid}\nmaster_repl_offset:{self.master_repl_offset}"
