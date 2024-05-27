@@ -1,9 +1,10 @@
 from app.resp_parser import RespParser
+from app.container import Container
 
 
 class RequestHandler:
     def __init__(self) -> None:
-        self.kv = {}
+        self.container = Container()
 
     def handle(self, input: list | int | str) -> str:
         if isinstance(input, list) and isinstance(input[0], str):
@@ -13,15 +14,15 @@ class RequestHandler:
                 case "PING":
                     return RespParser.encode("PONG")
                 case "SET":
-                    if len(input) != 3:
+                    if len(input) < 3:
                         raise ValueError("Invalid usage of SET")
-                    self.kv[input[1]] = input[2]
+                    if len(input) == 5 and input[3] == "px":
+                        self.container.set(input[1], input[2], expiry=input[4])
+                    else:
+                        self.container.set(input[1], input[2])
                     return RespParser.encode("OK")
                 case "GET":
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
-                    if input[1] in self.kv.keys():
-                        return RespParser.encode(self.kv[input[1]])
-                    else:
-                        return RespParser.encode("-1")
+                    return RespParser.encode(self.container.get(input[1]))
         raise ValueError("Unknown")
