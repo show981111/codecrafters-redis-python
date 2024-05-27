@@ -1,20 +1,29 @@
 # Uncomment this to pass the first stage
-import socket
 import asyncio
+
+from app.resp_parser import RespParser, RespParserError
+from app.request_handler import RequestHandler
 
 
 async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     address = writer.get_extra_info("peername")
     print(f"Connected to {address}")
-
+    data = b""
+    request_handler = RequestHandler()
     while True:
-        data = await reader.read(1024)  # Read up to 100 bytes
-        # message = data.decode()
+        data += await reader.read(1024)  # Read up to 1024 bytes
         if not data:
             break
-        print(f"Received {data!r} from {address}")
-        writer.write("+PONG\r\n".encode())
-        await writer.drain()
+        try:
+            parsed, _ = RespParser.decode(data)
+            print(f"Received {parsed} from {address}")
+
+            ret = request_handler.handle(parsed)
+            writer.write(ret.encode())
+            await writer.drain()
+            data = b""
+        except RespParserError as err:
+            pass
 
     print(f"Closed connection to {address}")
     writer.close()
