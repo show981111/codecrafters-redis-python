@@ -16,6 +16,13 @@ class RequestHandler:
                 raise ValueError("If it is a slave, should specify the master")
             self.master_host = master_host
             self.master_port = master_port
+        else:
+            import random
+            import string
+
+            characters = string.ascii_letters + string.digits
+            self.master_replid = "".join(random.choice(characters) for _ in range(40))
+            self.master_repl_offset = 0
 
     def handle(self, input: list | int | str) -> str:
         if isinstance(input, list) and isinstance(input[0], str):
@@ -40,5 +47,8 @@ class RequestHandler:
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
                     if input[1] == "replication":
-                        return RespParser.encode(f"role:{self.role}", type="bulk")
+                        return RespParser.encode(
+                            f"role:{self.role}\nmaster_replid:{self.master_replid}\nmaster_repl_offset:{self.master_repl_offset}",
+                            type="bulk",
+                        )
         raise ValueError("Unknown")
