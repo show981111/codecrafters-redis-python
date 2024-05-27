@@ -1,17 +1,19 @@
 class RespParser:
     @staticmethod
-    def encode(data: str | int | bytes | list | None) -> str:
+    def encode(data: str | int | bytes | list | None, type: str = "") -> str:
         if data is None:
             return f"$-1\r\n"
-        elif isinstance(data, str):
-            return f"+{data}\r\n"
         elif isinstance(data, int):
             return f":{data}\r\n"
-        elif isinstance(data, bytes):
-            return f"${len(data)}\r\n{data.decode('utf-8')}\r\n"
         elif isinstance(data, list):
             encoded_elements = "".join([RespParser.encode(element) for element in data])
             return f"*{len(data)}\r\n{encoded_elements}"
+        elif isinstance(data, bytes):
+            return f"${len(data)}\r\n{data.decode('utf-8')}\r\n"
+        elif isinstance(data, str) and type == "bulk":
+            return f"${len(data)}\r\n{data}\r\n"
+        elif isinstance(data, str):
+            return f"+{data}\r\n"
         else:
             raise ValueError("Unsupported data type for encoding")
 

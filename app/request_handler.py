@@ -25,4 +25,9 @@ class RequestHandler:
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
                     return RespParser.encode(self.container.get(input[1]))
+                case "INFO":
+                    if len(input) != 2:
+                        raise ValueError("Invalid usage of GET")
+                    if input[1] == "replication":
+                        return RespParser.encode("role:master", type="bulk")
         raise ValueError("Unknown")
