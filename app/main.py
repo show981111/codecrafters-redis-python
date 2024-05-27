@@ -45,7 +45,7 @@ async def main():
     args = parser.parse_args()
 
     server = await asyncio.start_server(
-        handle_client, "localhost", args.port, reuse_port=True
+        handle_client, "localhost", int(args.port), reuse_port=True
     )
 
     address = server.sockets[0].getsockname()
