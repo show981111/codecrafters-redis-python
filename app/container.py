@@ -15,9 +15,9 @@ class Container:
         self.kv: dict[Any, Element] = {}
 
     def get(self, key):
-        if (key not in self.kv.keys()) or datetime.now() - self.kv[
-            key
-        ].created_at > self.kv[key].expiry:
+        if (key not in self.kv.keys()) or (
+            datetime.now() - self.kv[key].created_at
+        ).total_seconds() > self.kv[key].expiry:
             return "-1"
         return self.kv[key].value
 
