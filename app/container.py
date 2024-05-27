@@ -22,6 +22,7 @@ class Container:
         return self.kv[key].value
 
     def set(self, key, value, expiry=-1):  # expiry input is in ms
+        print(f"Set {key} = {value}, with expiry = {expiry* 0.001}")
         self.kv[key] = Element(
-            value=value, created_at=datetime.now(), expiry=expiry * 100
+            value=value, created_at=datetime.now(), expiry=expiry * 0.001
         )
