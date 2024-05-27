@@ -17,7 +17,7 @@ class RequestHandler:
                     if len(input) < 3:
                         raise ValueError("Invalid usage of SET")
                     if len(input) == 5 and input[3] == "px":
-                        self.container.set(input[1], input[2], expiry=input[4])
+                        self.container.set(input[1], input[2], expiry=float(input[4]))
                     else:
                         self.container.set(input[1], input[2])
                     return RespParser.encode("OK")
