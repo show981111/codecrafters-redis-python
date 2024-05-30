@@ -1,4 +1,5 @@
 import asyncio
+import socket
 
 from app.resp_parser import RespParser, RespParserError
 from app.request_handler import RequestHandler
@@ -44,6 +45,9 @@ class Server:
         if role == "slave":
             if master_host is None or master_port is None:
                 raise ValueError("If it is a slave, should specify the master")
+            self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.clientsocket.connect((master_host, master_port))
+            self.clientsocket.sendall(RespParser.encode(["PING"], type="bulk").encode())
         self.request_handler = RequestHandler(
             role=role, master_host=master_host, master_port=master_port
         )

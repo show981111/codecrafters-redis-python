@@ -6,7 +6,9 @@ class RespParser:
         elif isinstance(data, int):
             return f":{data}\r\n"
         elif isinstance(data, list):
-            encoded_elements = "".join([RespParser.encode(element) for element in data])
+            encoded_elements = "".join(
+                [RespParser.encode(element, type) for element in data]
+            )
             return f"*{len(data)}\r\n{encoded_elements}"
         elif isinstance(data, bytes):
             return f"${len(data)}\r\n{data.decode('utf-8')}\r\n"

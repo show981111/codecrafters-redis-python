@@ -30,7 +30,7 @@ async def main():
     if args.replicaof is not None:
         role = "slave"
         master_host = args.replicaof.split(" ")[0]
-        master_port = args.replicaof.split(" ")[1]
+        master_port = int(args.replicaof.split(" ")[1])
     server = Server(
         port=args.port, role=role, master_host=master_host, master_port=master_port
     )
