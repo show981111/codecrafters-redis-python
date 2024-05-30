@@ -60,34 +60,41 @@ class Server:
     ) -> None:
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientsocket.connect((master_host, master_port))
-        # First, send ping
-        while True:
-            self.clientsocket.sendall(RespParser.encode(["PING"], type="bulk").encode())
-            connected = False
-            recvd = ""
-            start = datetime.now()
+
+        def send_and_wait(data: bytes, wait_message: str) -> None:
             while True:
-                data = self.clientsocket.recv(512)
-                recvd += RespParser.decode(data)[0]
-                if recvd == "PONG":
-                    connected = True
+                self.clientsocket.sendall(data)
+                connected = False
+                recvd = ""
+                start = datetime.now()
+                while True:
+                    data = self.clientsocket.recv(512)
+                    recvd += RespParser.decode(data)[0]
+                    if recvd == wait_message:
+                        connected = True
+                        break
+                    if (datetime.now() - start).total_seconds() > timeout:
+                        break
+                if connected:
                     break
-                if (datetime.now() - start).total_seconds() > timeout:
-                    break
-            if connected:
-                break
+
+        # First, send ping
+        send_and_wait(RespParser.encode(["PING"], type="bulk").encode(), "PONG")
         print("[Handshake] Ping completed")
 
         # Second, REPLCONF messages
-        self.clientsocket.sendall(
+        send_and_wait(
             RespParser.encode(
                 ["REPLCONF", "listening-port", str(self.port)], type="bulk"
-            ).encode()
+            ).encode(),
+            "OK",
         )
-        print("send")
-        self.clientsocket.sendall(
-            RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk").encode()
+        print("[Handshake] Replconf completed [1]")
+        send_and_wait(
+            RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk").encode(),
+            "OK",
         )
+        print("[Handshake] Replconf completed [2]")
 
     async def start(self) -> None:
         server = await asyncio.start_server(
