@@ -51,7 +51,8 @@ class RequestHandler:
                             self.get_info(),
                             type="bulk",
                         )
-        raise ValueError("Unknown")
+        print("Unknown command")
+        return ""
 
     def get_info(self) -> str:
         if self.role == "slave":
