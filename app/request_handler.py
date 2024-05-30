@@ -51,6 +51,8 @@ class RequestHandler:
                             self.get_info(),
                             type="bulk",
                         )
+                case "REPLCONF":
+                    return RespParser.encode("OK")
         print("Unknown command")
         return ""
 
