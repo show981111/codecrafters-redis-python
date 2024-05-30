@@ -67,7 +67,11 @@ class Server:
             self.master_repl_offset = 0
 
         self.request_handler = RequestHandler(
-            role=self.role, master_host=self.master_host, master_port=self.master_port
+            role=self.role,
+            master_host=self.master_host,
+            master_port=self.master_port,
+            master_replid=self.master_replid,
+            master_repl_offset=self.master_repl_offset,
         )
 
     def handshake_with_master(
