@@ -8,6 +8,8 @@ class RequestHandler:
         role: str = "master",
         master_host: str | None = None,
         master_port: int | None = None,
+        master_replid: int | None = None,
+        master_repl_offset: str | None = None,
     ) -> None:
         self.container = Container()
         self.role = role
@@ -17,12 +19,8 @@ class RequestHandler:
             self.master_host = master_host
             self.master_port = master_port
         else:
-            import random
-            import string
-
-            characters = string.ascii_letters + string.digits
-            self.master_replid = "".join(random.choice(characters) for _ in range(40))
-            self.master_repl_offset = 0
+            self.master_replid = master_replid
+            self.master_repl_offset = master_repl_offset
 
     def handle(self, input: list | int | str) -> str:
         if isinstance(input, list) and isinstance(input[0], str):

@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 import socket
+from typing import Any, Callable
 
 from app.resp_parser import RespParser, RespParserError
 from app.request_handler import RequestHandler
@@ -47,12 +48,26 @@ class Server:
         master_port: int | None = None,
     ) -> None:
         self.port = port
+        self.master_replid = None
+        self.master_repl_offset = None
+        self.role = role
+        self.master_host = master_host
+        self.master_port = master_port
+
         if role == "slave":
             if master_host is None or master_port is None:
                 raise ValueError("If it is a slave, should specify the master")
             self.handshake_with_master(master_host, master_port)
+        else:
+            import random
+            import string
+
+            characters = string.ascii_letters + string.digits
+            self.master_replid = "".join(random.choice(characters) for _ in range(40))
+            self.master_repl_offset = 0
+
         self.request_handler = RequestHandler(
-            role=role, master_host=master_host, master_port=master_port
+            role=self.role, master_host=self.master_host, master_port=self.master_port
         )
 
     def handshake_with_master(
@@ -61,25 +76,23 @@ class Server:
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientsocket.connect((master_host, master_port))
 
-        def send_and_wait(data: bytes, wait_message: str) -> None:
+        def send_and_wait(data: bytes, stop: Callable[[Any], bool]) -> Any:
             while True:
                 self.clientsocket.sendall(data)
-                connected = False
                 recvd = ""
                 start = datetime.now()
                 while True:
                     data = self.clientsocket.recv(512)
                     recvd += RespParser.decode(data)[0]
-                    if recvd == wait_message:
-                        connected = True
-                        break
+                    if stop(recvd):
+                        return recvd
                     if (datetime.now() - start).total_seconds() > timeout:
                         break
-                if connected:
-                    break
 
         # First, send ping
-        send_and_wait(RespParser.encode(["PING"], type="bulk").encode(), "PONG")
+        send_and_wait(
+            RespParser.encode(["PING"], type="bulk").encode(), lambda x: x == "PONG"
+        )
         print("[Handshake] Ping completed")
 
         # Second, REPLCONF messages
@@ -87,14 +100,18 @@ class Server:
             RespParser.encode(
                 ["REPLCONF", "listening-port", str(self.port)], type="bulk"
             ).encode(),
-            "OK",
+            lambda x: x == "OK",
         )
         print("[Handshake] Replconf completed [1]")
         send_and_wait(
             RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk").encode(),
-            "OK",
+            lambda x: x == "OK",
         )
         print("[Handshake] Replconf completed [2]")
+        resp = send_and_wait(
+            RespParser.encode(["PSYNC", "?", "-1"], type="bulk").encode(),
+            lambda x: isinstance(x, str) and x.startswith("FULLRESYNC"),
+        )
 
     async def start(self) -> None:
         server = await asyncio.start_server(

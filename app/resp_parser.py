@@ -21,8 +21,6 @@ class RespParser:
 
     @staticmethod
     def decode(data: bytes):
-        if len(data) == 0:
-            return b""
         end = data.find(b"\r\n")
         if end == -1:
             raise RespParserError("Invalid Input")
@@ -37,8 +35,8 @@ class RespParser:
             length = int(data[1:end])
             start = end + 2
             end = start + length
-            string_end = data.find(b"\r\n")
-            if string_end == -1:
+            string_end = data.find(b"\r\n", start)
+            if string_end == -1 or length != string_end - start:
                 raise RespParserError("Invalid Input")
             return data[start:end].decode("utf-8"), data[end + 2 :]
         elif data.startswith(b"*"):
