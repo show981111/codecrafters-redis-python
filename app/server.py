@@ -116,6 +116,7 @@ class Server:
             RespParser.encode(["PSYNC", "?", "-1"], type="bulk").encode(),
             lambda x: isinstance(x, str) and x.startswith("FULLRESYNC"),
         )
+        print(f"[Handshake] PSYNC completed: response: {resp}")
 
     async def start(self) -> None:
         server = await asyncio.start_server(

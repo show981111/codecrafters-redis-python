@@ -51,6 +51,10 @@ class RequestHandler:
                         )
                 case "REPLCONF":
                     return RespParser.encode("OK")
+                case "PSYNC":
+                    return RespParser.encode(
+                        f"FULLRESYNC {self.master_replid} {self.master_repl_offset}"
+                    )
         print("Unknown command")
         return ""
 
