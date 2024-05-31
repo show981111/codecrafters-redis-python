@@ -94,9 +94,10 @@ class Server:
                     print("Master closed the connection.")
                     break
                 try:
-                    parsed, _ = RespParser.decode(data)
-                    ret = await self.request_handler.handle(parsed)
-                    data = b""
+                    while len(data) > 0:
+                        parsed, data = RespParser.decode(data)
+                        ret = await self.request_handler.handle(parsed)
+                    # data = b""
                 except RespParserError as err:
                     print(f"[WARNING] {err}")
                     pass
@@ -121,7 +122,7 @@ class Server:
                 recvd_bytes: bytes = b""
                 start = datetime.now()
                 while True:
-                    recvd_bytes += await reader.read(512)
+                    recvd_bytes += await reader.read(1024)
                     if stop(recvd_bytes):
                         return recvd_bytes
                     if (datetime.now() - start).total_seconds() > timeout:
@@ -148,7 +149,7 @@ class Server:
         )
         print("[Handshake] Replconf completed [2]")
 
-        def get_psync_resp(x: bytes) -> bool:  # TODO: finish this
+        def get_psync_resp(x: bytes) -> bool:
             length_idx = x.find(b"$")
             length_end_idx = x.find(b"\r\n", length_idx)
             if length_idx != -1 and length_end_idx != -1:
