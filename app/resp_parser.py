@@ -1,6 +1,16 @@
+from typing import Final, Literal
+
+
 class RespParser:
+
+    empty_rdb_base64: Final[str] = (
+        "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
+    )
+
     @staticmethod
-    def encode(data: str | int | bytes | list | None, type: str = "") -> str:
+    def encode(
+        data: str | int | bytes | list | None, type: Literal["", "bulk", "rdb"] = ""
+    ) -> str:
         if data is None:
             return f"$-1\r\n"
         elif isinstance(data, int):
@@ -14,13 +24,15 @@ class RespParser:
             return f"${len(data)}\r\n{data.decode('utf-8')}\r\n"
         elif isinstance(data, str) and type == "bulk":
             return f"${len(data)}\r\n{data}\r\n"
+        elif isinstance(data, str) and type == "rdb":
+            return f"${len(data)}\r\n{data}"
         elif isinstance(data, str):
             return f"+{data}\r\n"
         else:
             raise ValueError("Unsupported data type for encoding")
 
     @staticmethod
-    def decode(data: bytes):
+    def decode(data: bytes, type: Literal["", "bulk", "rdb"] = ""):
         end = data.find(b"\r\n")
         if end == -1:
             raise RespParserError("Invalid Input")
@@ -32,6 +44,11 @@ class RespParser:
             return data[1:-2].decode("utf-8"), data[len(data) :]
         elif data.startswith(b":"):
             return int(data[1:-2]), data[len(data) :]
+        elif data.startswith(b"$") and type == "rdb":
+            length = int(data[1:end])
+            if length != len(data) - (end + 2):
+                raise RespParserError("Length is not matching")
+            return data[end + 2 :], data[len(data) :]
         elif data.startswith(b"$"):  # bulk string
             length = int(data[1:end])
             start = end + 2

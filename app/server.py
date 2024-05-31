@@ -27,7 +27,11 @@ async def handle_client(
             data = b""
             if len(ret) == 0:
                 continue
-            writer.write(ret.encode())
+            if isinstance(ret, list):
+                for item in ret:
+                    writer.write(item.encode())
+            else:
+                writer.write(ret.encode())
             await writer.drain()
             print(f"Sent")
         except RespParserError as err:
@@ -80,22 +84,22 @@ class Server:
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientsocket.connect((master_host, master_port))
 
-        def send_and_wait(data: bytes, stop: Callable[[Any], bool]) -> Any:
+        def send_and_wait(send_data: bytes, stop: Callable[[bytes], bool]) -> Any:
             while True:
-                self.clientsocket.sendall(data)
-                recvd = ""
+                self.clientsocket.sendall(send_data)
+                recvd_bytes: bytes = b""
                 start = datetime.now()
                 while True:
-                    data = self.clientsocket.recv(512)
-                    recvd += RespParser.decode(data)[0]
-                    if stop(recvd):
-                        return recvd
+                    recvd_bytes += self.clientsocket.recv(512)
+                    if stop(recvd_bytes):
+                        return recvd_bytes
                     if (datetime.now() - start).total_seconds() > timeout:
                         break
 
         # First, send ping
         send_and_wait(
-            RespParser.encode(["PING"], type="bulk").encode(), lambda x: x == "PONG"
+            RespParser.encode(["PING"], type="bulk").encode(),
+            lambda x: RespParser.decode(x)[0] == "PONG",
         )
         print("[Handshake] Ping completed")
 
@@ -104,17 +108,30 @@ class Server:
             RespParser.encode(
                 ["REPLCONF", "listening-port", str(self.port)], type="bulk"
             ).encode(),
-            lambda x: x == "OK",
+            lambda x: RespParser.decode(x)[0] == "OK",
         )
         print("[Handshake] Replconf completed [1]")
         send_and_wait(
             RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk").encode(),
-            lambda x: x == "OK",
+            lambda x: RespParser.decode(x)[0] == "OK",
         )
         print("[Handshake] Replconf completed [2]")
+
+        def get_psync_resp(x: bytes) -> bool:  # TODO: finish this
+            print("Get", x)
+            length_idx = x.find(b"$")  # FIX THIS
+            length_end_idx = x.find(b"\r\n", length_idx)
+            if length_idx != -1 and length_end_idx != -1:
+                length = int(x[length_idx + 1 : length_end_idx])
+                if RespParser.decode(x[:length_idx])[0].startswith(
+                    "FULLERSYNC"
+                ) and length == len(x) - (length_end_idx + 2):
+                    return True
+            return False
+
         resp = send_and_wait(
             RespParser.encode(["PSYNC", "?", "-1"], type="bulk").encode(),
-            lambda x: isinstance(x, str) and x.startswith("FULLRESYNC"),
+            get_psync_resp,
         )
         print(f"[Handshake] PSYNC completed: response: {resp}")
 
