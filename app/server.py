@@ -29,9 +29,9 @@ async def handle_client(
                 continue
             if isinstance(ret, list):
                 for item in ret:
-                    writer.write(item.encode())
+                    writer.write(item)
             else:
-                writer.write(ret.encode())
+                writer.write(ret)
             await writer.drain()
             print(f"Sent")
         except RespParserError as err:
@@ -98,7 +98,7 @@ class Server:
 
         # First, send ping
         send_and_wait(
-            RespParser.encode(["PING"], type="bulk").encode(),
+            RespParser.encode(["PING"], type="bulk"),
             lambda x: RespParser.decode(x)[0] == "PONG",
         )
         print("[Handshake] Ping completed")
@@ -107,12 +107,12 @@ class Server:
         send_and_wait(
             RespParser.encode(
                 ["REPLCONF", "listening-port", str(self.port)], type="bulk"
-            ).encode(),
+            ),
             lambda x: RespParser.decode(x)[0] == "OK",
         )
         print("[Handshake] Replconf completed [1]")
         send_and_wait(
-            RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk").encode(),
+            RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk"),
             lambda x: RespParser.decode(x)[0] == "OK",
         )
         print("[Handshake] Replconf completed [2]")
@@ -130,7 +130,7 @@ class Server:
             return False
 
         resp = send_and_wait(
-            RespParser.encode(["PSYNC", "?", "-1"], type="bulk").encode(),
+            RespParser.encode(["PSYNC", "?", "-1"], type="bulk"),
             get_psync_resp,
         )
         print(f"[Handshake] PSYNC completed: response: {resp}")

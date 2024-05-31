@@ -3,31 +3,31 @@ from typing import Final, Literal
 
 class RespParser:
 
-    empty_rdb_base64: Final[str] = (
-        "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
+    empty_rdb_hex: Final[str] = (
+        "524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2"
     )
 
     @staticmethod
     def encode(
         data: str | int | bytes | list | None, type: Literal["", "bulk", "rdb"] = ""
-    ) -> str:
+    ) -> bytes:
         if data is None:
-            return f"$-1\r\n"
+            return f"$-1\r\n".encode()
         elif isinstance(data, int):
-            return f":{data}\r\n"
+            return f":{data}\r\n".encode()
         elif isinstance(data, list):
-            encoded_elements = "".join(
+            encoded_elements = b"".join(
                 [RespParser.encode(element, type) for element in data]
             )
-            return f"*{len(data)}\r\n{encoded_elements}"
+            return f"*{len(data)}\r\n".encode() + encoded_elements
         elif isinstance(data, bytes):
-            return f"${len(data)}\r\n{data.decode('utf-8')}\r\n"
+            return f"${len(data)}\r\n{data.decode('utf-8')}\r\n".encode()
         elif isinstance(data, str) and type == "bulk":
-            return f"${len(data)}\r\n{data}\r\n"
+            return f"${len(data)}\r\n{data}\r\n".encode()
         elif isinstance(data, str) and type == "rdb":
-            return f"${len(data)}\r\n{data}"
+            return f"${len(data)}\r\n".encode() + bytes.fromhex(data)
         elif isinstance(data, str):
-            return f"+{data}\r\n"
+            return f"+{data}\r\n".encode()
         else:
             raise ValueError("Unsupported data type for encoding")
 

@@ -22,7 +22,7 @@ class RequestHandler:
             self.master_replid = master_replid
             self.master_repl_offset = master_repl_offset
 
-    def handle(self, input: list | int | str) -> str | list[str]:
+    def handle(self, input: list | int | str) -> bytes | list[bytes]:
         if isinstance(input, list) and isinstance(input[0], str):
             match input[0].upper():
                 case "ECHO":
@@ -56,7 +56,7 @@ class RequestHandler:
                         RespParser.encode(
                             f"FULLRESYNC {self.master_replid} {self.master_repl_offset}"
                         ),
-                        RespParser.encode(RespParser.empty_rdb_base64, type="rdb"),
+                        RespParser.encode(RespParser.empty_rdb_hex, type="rdb"),
                     ]
         print("Unknown command")
         return ""
