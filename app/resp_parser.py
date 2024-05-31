@@ -26,6 +26,7 @@ class RespParser:
             raise RespParserError("Invalid Input")
 
         if data.startswith(b"+"):
+            print("recvd:", data)
             return data[1:-2].decode("utf-8"), data[len(data) :]
         elif data.startswith(b"-"):
             return data[1:-2].decode("utf-8"), data[len(data) :]
