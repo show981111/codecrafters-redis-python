@@ -24,24 +24,24 @@ async def handle_client(
             parsed, _ = RespParser.decode(data)
             print(f"Received {parsed} from {address}")
 
-            ret = request_handler.handle(parsed)
-            data = b""
+            ret = await request_handler.handle(parsed, writer)
             if len(ret) == 0:
                 continue
             if isinstance(ret, list):
                 for item in ret:
                     writer.write(item)
-                    # await writer.drain()
             else:
                 writer.write(ret)
             await writer.drain()
             print(f"Sent")
+            data = b""
         except RespParserError as err:
             print(f"[WARNING] {err}")
             pass
-
+    # comes here only when the connection is closed.
     print(f"Closed connection to {address}")
     writer.close()
+    request_handler.discard_wr(writer)
     await writer.wait_closed()
 
 
@@ -63,7 +63,7 @@ class Server:
         if role == "slave":
             if master_host is None or master_port is None:
                 raise ValueError("If it is a slave, should specify the master")
-            self.handshake_with_master(master_host, master_port)
+            # self.connect_with_master(master_host, master_port)
         else:
             import random
             import string
@@ -80,40 +80,69 @@ class Server:
             master_repl_offset=self.master_repl_offset,
         )
 
-    def handshake_with_master(
-        self, master_host: str, master_port: int, timeout: int = 10
-    ) -> None:
-        self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clientsocket.connect((master_host, master_port))
+    async def talk_to_master(self, master_host: str, master_port: int) -> None:
+        reader, writer = await asyncio.open_connection(master_host, master_port)
+        print(f"Connected to master at {master_host}:{master_port}")
 
-        def send_and_wait(send_data: bytes, stop: Callable[[bytes], bool]) -> Any:
+        await self.handshake_with_master(reader, writer)
+        try:
+            data = b""
             while True:
-                self.clientsocket.sendall(send_data)
+                data += await reader.read(1024)
+                print("From master", data)
+                if not data:
+                    print("Master closed the connection.")
+                    break
+                try:
+                    parsed, _ = RespParser.decode(data)
+                    ret = await self.request_handler.handle(parsed)
+                    data = b""
+                except RespParserError as err:
+                    print(f"[WARNING] {err}")
+                    pass
+        except asyncio.CancelledError:
+            pass
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    async def handshake_with_master(
+        self,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
+        timeout: int = 10,
+    ) -> None:
+        async def send_and_wait(
+            send_data: bytes, stop: Callable[[bytes], bool]
+        ) -> bytes:
+            while True:
+                writer.write(send_data)
+                await writer.drain()
                 recvd_bytes: bytes = b""
                 start = datetime.now()
                 while True:
-                    recvd_bytes += self.clientsocket.recv(512)
+                    recvd_bytes += await reader.read(512)
                     if stop(recvd_bytes):
                         return recvd_bytes
                     if (datetime.now() - start).total_seconds() > timeout:
                         break
 
         # First, send ping
-        send_and_wait(
+        await send_and_wait(
             RespParser.encode(["PING"], type="bulk"),
             lambda x: RespParser.decode(x)[0] == "PONG",
         )
         print("[Handshake] Ping completed")
 
         # Second, REPLCONF messages
-        send_and_wait(
+        await send_and_wait(
             RespParser.encode(
                 ["REPLCONF", "listening-port", str(self.port)], type="bulk"
             ),
             lambda x: RespParser.decode(x)[0] == "OK",
         )
         print("[Handshake] Replconf completed [1]")
-        send_and_wait(
+        await send_and_wait(
             RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk"),
             lambda x: RespParser.decode(x)[0] == "OK",
         )
@@ -130,11 +159,11 @@ class Server:
                     return True
             return False
 
-        resp = send_and_wait(
+        resp = await send_and_wait(
             RespParser.encode(["PSYNC", "?", "-1"], type="bulk"),
             get_psync_resp,
         )
-        print(f"[Handshake] PSYNC completed: response: {resp}")
+        print(f"[Handshake] PSYNC completed")
 
     async def start(self) -> None:
         server = await asyncio.start_server(
@@ -143,9 +172,17 @@ class Server:
             self.port,
             reuse_port=True,
         )
+        tasks = [server.serve_forever()]
+        if self.role == "slave":
+            tasks.append(
+                asyncio.create_task(
+                    self.talk_to_master(self.master_host, self.master_port)
+                )
+            )
 
         address = server.sockets[0].getsockname()
         print(f"Serving on {address}")
 
         async with server:
-            await server.serve_forever()
+            await asyncio.gather(*tasks)
+            # await server.serve_forever()

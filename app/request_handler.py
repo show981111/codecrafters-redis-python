@@ -1,3 +1,4 @@
+import asyncio
 from app.resp_parser import RespParser
 from app.container import Container
 
@@ -21,8 +22,13 @@ class RequestHandler:
         else:
             self.master_replid = master_replid
             self.master_repl_offset = master_repl_offset
+            self.replicas: set[asyncio.StreamWriter] = set()
 
-    def handle(self, input: list | int | str) -> bytes | list[bytes]:
+    async def handle(
+        self,
+        input: list | int | str,
+        writer: asyncio.StreamWriter | None = None,
+    ) -> bytes | list[bytes]:
         if isinstance(input, list) and isinstance(input[0], str):
             match input[0].upper():
                 case "ECHO":
@@ -36,6 +42,7 @@ class RequestHandler:
                         self.container.set(input[1], input[2], expiry=float(input[4]))
                     else:
                         self.container.set(input[1], input[2])
+                    await self.propagte_commands(input)
                     return RespParser.encode("OK")
                 case "GET":
                     if len(input) != 2:
@@ -52,6 +59,11 @@ class RequestHandler:
                 case "REPLCONF":
                     return RespParser.encode("OK")
                 case "PSYNC":
+                    if self.role != "master" or writer is None:
+                        raise ValueError(
+                            "Role is not a master but got PSYNC or Writer is None"
+                        )
+                    self.replicas.add(writer)
                     return [
                         RespParser.encode(
                             f"FULLRESYNC {self.master_replid} {self.master_repl_offset}"
@@ -66,3 +78,14 @@ class RequestHandler:
             return f"role:{self.role}"
         else:
             return f"role:{self.role}\nmaster_replid:{self.master_replid}\nmaster_repl_offset:{self.master_repl_offset}"
+
+    async def propagte_commands(self, input: list | int | str) -> None:
+        if self.role == "master":
+            for wr in self.replicas:
+                wr.write(RespParser.encode(input, type="bulk"))
+                await wr.drain()
+                print("Propagete Done!")
+
+    def discard_wr(self, wr: asyncio.StreamWriter) -> None:
+        if self.role == "master":
+            self.replicas.discard(wr)
