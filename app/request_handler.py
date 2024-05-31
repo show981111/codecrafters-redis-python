@@ -57,6 +57,8 @@ class RequestHandler:
                             f"FULLRESYNC {self.master_replid} {self.master_repl_offset}"
                         ),
                         RespParser.encode(RespParser.empty_rdb_hex, type="rdb"),
+                        # "$\r\n",
+                        # bytes.fromhex(RespParser.empty_rdb_hex)
                     ]
         print("Unknown command")
         return ""

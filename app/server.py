@@ -119,7 +119,7 @@ class Server:
         print("[Handshake] Replconf completed [2]")
 
         def get_psync_resp(x: bytes) -> bool:  # TODO: finish this
-            print("Get", x)
+            # print("Get", x)
             length_idx = x.find(b"$")  # FIX THIS
             length_end_idx = x.find(b"\r\n", length_idx)
             if length_idx != -1 and length_end_idx != -1:
