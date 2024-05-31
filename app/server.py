@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 import socket
+import sys
 from typing import Any, Callable
 
 from app.resp_parser import RespParser, RespParserError
@@ -119,13 +120,12 @@ class Server:
         print("[Handshake] Replconf completed [2]")
 
         def get_psync_resp(x: bytes) -> bool:  # TODO: finish this
-            # print("Get", x)
-            length_idx = x.find(b"$")  # FIX THIS
+            length_idx = x.find(b"$")
             length_end_idx = x.find(b"\r\n", length_idx)
             if length_idx != -1 and length_end_idx != -1:
                 length = int(x[length_idx + 1 : length_end_idx])
                 if RespParser.decode(x[:length_idx])[0].startswith(
-                    "FULLERSYNC"
+                    "FULLRESYNC"
                 ) and length == len(x) - (length_end_idx + 2):
                     return True
             return False
