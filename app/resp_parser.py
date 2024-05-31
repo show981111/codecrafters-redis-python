@@ -25,7 +25,8 @@ class RespParser:
         elif isinstance(data, str) and type == "bulk":
             return f"${len(data)}\r\n{data}\r\n".encode()
         elif isinstance(data, str) and type == "rdb":
-            return f"${len(data)}\r\n".encode() + bytes.fromhex(data)
+            content = bytes.fromhex(data)
+            return f"${len(content)}\r\n".encode() + content
         elif isinstance(data, str):
             return f"+{data}\r\n".encode()
         else:
