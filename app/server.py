@@ -30,10 +30,10 @@ async def handle_client(
             if isinstance(ret, list):
                 for item in ret:
                     writer.write(item)
-                    await writer.drain()
+                    # await writer.drain()
             else:
                 writer.write(ret)
-                await writer.drain()
+            await writer.drain()
             print(f"Sent")
         except RespParserError as err:
             print(f"[WARNING] {err}")
