@@ -94,10 +94,11 @@ class Server:
                     print("Master closed the connection.")
                     break
                 try:
-                    while len(data) > 0:
+                    while (
+                        len(data) > 0
+                    ):  # Process multiple commands came as a chunk in data!
                         parsed, data = RespParser.decode(data)
                         ret = await self.request_handler.handle(parsed)
-                    # data = b""
                 except RespParserError as err:
                     print(f"[WARNING] {err}")
                     pass

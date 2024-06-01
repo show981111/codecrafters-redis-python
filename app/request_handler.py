@@ -57,6 +57,15 @@ class RequestHandler:
                             type="bulk",
                         )
                 case "REPLCONF":
+                    if len(input) == 3 and input[1] == "GETACK" and input[2] == "*":
+                        # Master asks for Ack
+                        if input[2] == "*" and self.role == "slave":
+                            return RespParser.encode(
+                                ["REPLCONF", "ACK", "0"]
+                            )  # last arg should be #bytes that replica processed
+                    elif len(input) == 3 and input[1] == "ACK":
+                        offset = int(input[2])  # Response from replica for getAck
+
                     return RespParser.encode("OK")
                 case "PSYNC":
                     if self.role != "master" or writer is None:
