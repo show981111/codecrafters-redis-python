@@ -272,3 +272,4 @@ class RequestHandler:
         if self.role == "master" and wr in self.replicas.keys():
             self.replicas.pop(wr)
             self.replica_addr_to_writer.pop(address)
+            print(f"Replica disconncted: {address}")
