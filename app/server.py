@@ -184,6 +184,7 @@ class Server:
             "localhost",
             self.port,
             reuse_port=True,
+            family=socket.AF_INET,
         )
         tasks = [server.serve_forever()]
         if self.role == "slave":
