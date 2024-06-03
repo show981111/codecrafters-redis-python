@@ -1,5 +1,6 @@
 import asyncio
 
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal, Tuple
@@ -36,7 +37,7 @@ class RequestHandler:
             self.master_replid = master_replid
             self.master_repl_offset = master_repl_offset
             self.replicas: dict[asyncio.StreamWriter, asyncio.StreamReader] = {}
-            self.sent_commands: dict[asyncio.StreamWriter, int] = {}
+            self.sent_commands: defaultdict[asyncio.StreamWriter, int] = {}
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):
