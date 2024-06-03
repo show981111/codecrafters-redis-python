@@ -52,9 +52,12 @@ class RequestHandler:
         if self.dir is not None and self.rdb_filename is not None:
             dbfile = self.dir / self.rdb_filename
             self.rdb_parser = RdbParser(dbfile)
-            self.rdb_parser.get_keys()
+            self.rdb_parser.parse()
             for k, v in self.rdb_parser.kv.items():
-                self.container.set(k, v)
+                if "expiry" in v.keys():
+                    self.container.set(k, v["value"], expiry=v["expiry"] * 1000)
+                else:
+                    self.container.set(k, v["value"])
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):

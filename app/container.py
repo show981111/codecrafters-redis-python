@@ -6,7 +6,7 @@ from typing import Any
 @dataclass
 class Element:
     value: Any
-    created_at: datetime
+    created_at: datetime = datetime.now()
     expiry: float  # in second
 
 

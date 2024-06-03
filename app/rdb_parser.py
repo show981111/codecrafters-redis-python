@@ -2,6 +2,8 @@ import codecs
 from pathlib import Path
 from typing import Any, Tuple
 
+from app.container import Element
+
 
 class RdbParser:
     """
