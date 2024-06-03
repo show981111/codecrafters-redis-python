@@ -101,7 +101,12 @@ class Server:
                     ):  # Process multiple commands came as a chunk in data!
                         self.request_handler.processed_commands_from_master += len(data)
                         parsed, data = RespParser.decode(data)
-                        ret = await self.request_handler.handle(parsed)
+                        ret = await self.request_handler.handle(
+                            parsed, peer_info=writer.get_extra_info("peername")
+                        )
+                        if ret.code == 201:
+                            writer.write(ret.data)
+                            await writer.drain()
                 except RespParserError as err:
                     print(f"[WARNING] {err}")
                     pass
