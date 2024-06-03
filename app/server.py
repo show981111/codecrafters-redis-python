@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from pathlib import Path
 import socket
 import sys
 from typing import Any, Callable
@@ -24,7 +25,7 @@ async def handle_client(
             parsed, _ = RespParser.decode(data)
             print(f"Received {parsed} from {address}")
 
-            ret = await request_handler.handle(parsed, len(data), address)
+            ret = await request_handler.handle(parsed, address)
             if ret.code == 203:
                 request_handler.replicas[writer] = reader
                 request_handler.replica_addr_to_writer[address] = writer
@@ -56,6 +57,8 @@ class Server:
         role: str = "master",
         master_host: str | None = None,
         master_port: int | None = None,
+        dir: Path | None = None,
+        rdbfilename: str | None = None,
     ) -> None:
         self.port = port
         self.master_replid = None
@@ -82,6 +85,8 @@ class Server:
             master_port=self.master_port,
             master_replid=self.master_replid,
             master_repl_offset=self.master_repl_offset,
+            dir=dir,
+            rdbfilename=rdbfilename,
         )
 
     async def talk_to_master(self, master_host: str, master_port: int) -> None:

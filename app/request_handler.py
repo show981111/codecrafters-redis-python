@@ -3,6 +3,7 @@ import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Literal, Tuple
 from app.resp_parser import RespParser
 from app.container import Container
@@ -24,6 +25,8 @@ class RequestHandler:
         master_port: int | None = None,
         master_replid: int | None = None,
         master_repl_offset: str | None = None,
+        dir: Path | None = None,
+        rdbfilename: str | None = None,
     ) -> None:
         self.container = Container()
         self.role = role
@@ -43,6 +46,8 @@ class RequestHandler:
             self.sent_commands: defaultdict[asyncio.StreamWriter, int] = defaultdict(
                 int
             )
+        self.dir = dir
+        self.rdb_filename = rdbfilename
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):
@@ -64,24 +69,9 @@ class RequestHandler:
     async def handle(
         self,
         input: list | int | str,
-        bytes_length: int = 0,
         peer_info: Tuple[str, int] | None = None,
     ) -> Response:
         if isinstance(input, list) and isinstance(input[0], str):
-            # if (
-            #     self.wait
-            #     and not (input[0].upper() == "REPLCONF" and input[1] == "ACK")
-            # ):
-            #     return b""
-            # elif self.wait and datetime.now() - self.wait_started > self.timeout: # timeout
-            #     ret = len(self.wait_responded)
-            #     self.wait_responded.clear()
-            #     return ret
-            # elif self.wait and self.wait_for >= len(self.wait_responded): # wait condition met
-            #     self.wait_responded.clear()
-            #     return
-            # elif self.wait: # within timeout, wait condition not met yet.
-
             match input[0].upper():
                 case "ECHO":
                     return Response(200, RespParser.encode(input[1]))
@@ -161,12 +151,15 @@ class RequestHandler:
 
                     for wr in self.replicas.keys():
                         if self.sent_commands[wr] == 0:
-                            print("Haven't sent anything...")
+                            print(
+                                "Haven't sent anything..."
+                            )  # No previous write operations. So don't have to ask.
                             self.responded_replica += 1
                         else:
                             wr.write(send_data)
                             await wr.drain()
-
+                    # For simplicity, we only send GET ACK ONCE. Rely on TCP's in-order ACK. If we sent A,B,C and got reply for C,
+                    # means A and B were transferred successfully.
                     try:
                         async with asyncio.timeout(int(input[2]) / 1000):
                             while self.responded_replica < int(input[1]):
@@ -179,6 +172,20 @@ class RequestHandler:
                         if self.sent_commands[wr] > 0:
                             self.sent_commands[wr] += len(send_data)
                     return Response(200, RespParser.encode(self.responded_replica))
+                case "CONFIG":
+                    if len(input) >= 3 and input[1] == "GET":
+                        if input[2] == "dir":
+                            return Response(
+                                200,
+                                RespParser.encode(["dir", str(self.dir)], type="bulk"),
+                            )
+                        elif input[2] == "dbfilename":
+                            return Response(
+                                200,
+                                RespParser.encode(
+                                    ["dir", self.rdb_filename], type="bulk"
+                                ),
+                            )
         print("Unknown command")
         return Response(400, b"")
 

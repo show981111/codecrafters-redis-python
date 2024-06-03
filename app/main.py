@@ -1,6 +1,7 @@
 # Uncomment this to pass the first stage
 import argparse
 import asyncio
+from pathlib import Path
 
 from app.server import Server
 
@@ -21,6 +22,18 @@ async def main():
         required=False,
         help='Replica of host. Usage: "<MASTER_HOST> <MASTER_PORT>"',
     )
+    parser.add_argument(
+        "--dir",
+        type=Path,
+        required=False,
+        help="Dir of rdb file",
+    )
+    parser.add_argument(
+        "--dbfilename",
+        type=str,
+        required=False,
+        help="Name of db file",
+    )
 
     args = parser.parse_args()
 
@@ -32,7 +45,12 @@ async def main():
         master_host = args.replicaof.split(" ")[0]
         master_port = int(args.replicaof.split(" ")[1])
     server = Server(
-        port=args.port, role=role, master_host=master_host, master_port=master_port
+        port=args.port,
+        role=role,
+        master_host=master_host,
+        master_port=master_port,
+        dir=args.dir,
+        rdbfilename=args.dbfilename,
     )
 
     await server.start()
