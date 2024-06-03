@@ -178,81 +178,9 @@ class RequestHandler:
                     for wr in self.replicas.keys():
                         if self.sent_commands[wr] > 0:
                             self.sent_commands[wr] += len(send_data)
-                    # ret = await self.handle_wait(int(input[2]) / 1000, int(input[1]))
                     return Response(200, RespParser.encode(self.responded_replica))
         print("Unknown command")
         return Response(400, b"")
-
-    ##### TODO: Unsure about this part. How to listen do multiple stream readers while we are making sure about the timeout
-    ##### and exit condition (stop wait if n number of replicas processed the command)?
-    async def handle_wait(
-        self,
-        timeout: float,  # in MS
-        num_replicas: int,
-    ) -> int:
-        # if num_replicas == 0:
-        #     return 0
-        print("[Handle wait]")
-        completed = 0
-        tasks = []
-        for writer, reader in self.replicas.items():
-
-            async def wait_for_ack(
-                writer: asyncio.StreamWriter, reader: asyncio.StreamReader
-            ) -> asyncio.StreamWriter:
-                """Send GETACK to replica and wait for an Ack(infinitely). Loop until we get what we want(enough number of commands processed)"""
-                expect = self.sent_commands[writer]
-                if expect == 0:
-                    return writer
-                print(f"Expecting {expect} number of bytes...")
-                send_data = RespParser.encode(["REPLCONF", "GETACK", "*"], type="bulk")
-                while True:  # Send & recv loop
-                    send = False
-                    writer.write(send_data)
-                    self.sent_commands[writer] += len(send_data)
-                    await writer.drain()
-                    data = b""
-                    while True:  # Recv loop
-                        data += await reader.read(512)
-                        if data:
-                            parsed, _ = RespParser.decode(data)
-                            print(f"Received {parsed} from reader")
-                            if (
-                                len(parsed) == 3
-                                and parsed[0].upper() == "REPLCONF"
-                                and parsed[1] == "ACK"
-                            ):
-                                if int(parsed[2]) == expect:
-                                    return writer
-                                else:
-                                    send = True  # Need to resend the commands
-                                    data = b""
-                                    break
-                        else:
-                            break
-                        if send:
-                            break
-
-            tasks.append(  # run this function for max timeout. So that the as_completed can exit within timeout.
-                asyncio.wait_for(wait_for_ack(writer, reader), timeout=timeout + 0.1)
-            )
-
-        for coroutine in asyncio.as_completed(tasks):
-            try:
-                ret = await coroutine
-                if ret:
-                    completed += 1
-                    if completed >= num_replicas:
-                        print(f"Completed: {completed}")
-                        # Note: Due to this, the result will never be greater than num_replicas...
-                        # However, we don't know when the next task will be done. So it is an early exit, without waiting for all "timeout"
-                        return completed
-
-            except Exception as e:
-                print(f"[Wait_for_ack] errored out: {e}")
-                pass
-        print("[Handle wait] Nothing returned so timed out!")
-        return completed
 
     def get_info(self) -> str:
         if self.role == "slave":
