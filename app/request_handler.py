@@ -171,7 +171,8 @@ class RequestHandler:
         num_replicas: int,
     ) -> int:
         if num_replicas == 0:
-            return len(self.replicas)
+            return 0
+        return len(self.replicas)
 
         completed = 0
         tasks = []
@@ -246,5 +247,5 @@ class RequestHandler:
                 print("Propagete Done!")
 
     def discard_wr(self, wr: asyncio.StreamWriter) -> None:
-        if self.role == "master":
+        if self.role == "master" and wr in self.replicas.keys():
             self.replicas.pop(wr)
