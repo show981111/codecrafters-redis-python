@@ -67,9 +67,9 @@ class RdbParser:
         print("the data is read")
         trimmedData = self._get_content(data)
         print("Trimmed data", trimmedData)
-        key_dict = self._extract_key_value_pairs(trimmedData)
-        print("key recieved", key_dict)
+        self.kv = self._extract_key_value_pairs(trimmedData)
+        print("key recieved", self.kv)
         result = []
-        for k in key_dict:
+        for k in self.kv:
             result.append(k)
         return result
