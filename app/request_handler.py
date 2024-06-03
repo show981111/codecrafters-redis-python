@@ -203,15 +203,11 @@ class RequestHandler:
                             )
                 case "KEYS":
                     if len(input) == 2 and input[1] == "*":
-                        if self.dir is not None and self.rdb_filename is not None:
-                            return Response(
-                                200,
-                                RespParser.encode(
-                                    self.container.kv.keys(), type="bulk"
-                                ),
-                            )
-                        else:
-                            print("KEYS requested when there is no files.")
+                        return Response(
+                            200,
+                            RespParser.encode(self.container.kv.keys(), type="bulk"),
+                        )
+
         print("Unknown command")
         return Response(400, b"")
 
