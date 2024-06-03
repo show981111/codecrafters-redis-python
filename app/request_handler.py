@@ -222,7 +222,7 @@ class RequestHandler:
 
             except Exception as e:
                 pass
-
+        print("[Handle wait] Nothing returned so timed out!")
         return completed
 
     def get_info(self) -> str:
