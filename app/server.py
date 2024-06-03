@@ -94,7 +94,7 @@ class Server:
                     while (
                         len(data) > 0
                     ):  # Process multiple commands came as a chunk in data!
-                        self.request_handler.processed_commands_from_master += len(data)
+                        before_process_length = len(data)
                         parsed, data = RespParser.decode(data)
                         ret = await self.request_handler.handle(
                             parsed, peer_info=writer.get_extra_info("peername")
@@ -102,6 +102,9 @@ class Server:
                         if ret.code == 201:
                             writer.write(ret.data)
                             await writer.drain()
+                        self.request_handler.processed_commands_from_master += (
+                            before_process_length - len(data)
+                        )
                     data += await reader.read(1024)
                     print("From master", data)
                     if not data:
