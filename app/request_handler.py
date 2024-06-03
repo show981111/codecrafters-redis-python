@@ -207,7 +207,7 @@ class RequestHandler:
                             return Response(
                                 200,
                                 RespParser.encode(
-                                    self.rdb_parser.kv.keys(), type="bulk"
+                                    self.container.kv.keys(), type="bulk"
                                 ),
                             )
         print("Unknown command")
