@@ -22,7 +22,6 @@ class RdbParser:
         idxoff = res.index("ff")
         lst = res[idxofb:idxoff].split("00")
         reslst = []
-        # i = 0
         for x in lst:
             reslst.append(str(x).strip().split(" "))
         reslst.pop(1)
@@ -39,7 +38,7 @@ class RdbParser:
         for x in data:
             lengthKey = int(x[0])
             l1 = x[1 : lengthKey + 1]
-            l2 = x[lengthKey:]
+            l2 = x[lengthKey + 1 :]
             key = ""
             value = ""
             value_integer = False
