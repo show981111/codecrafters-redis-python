@@ -197,7 +197,7 @@ class RequestHandler:
                             dbfile = self.dir / self.rdb_filename
                             self.rdb_parser = RdbParser(dbfile)
                             k = self.rdb_parser.get_keys()
-                            return RespParser.encode(k, type="bulk")
+                            return Response(200, RespParser.encode(k, type="bulk"))
         print("Unknown command")
         return Response(400, b"")
 
