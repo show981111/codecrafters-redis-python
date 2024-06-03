@@ -171,7 +171,7 @@ class RequestHandler:
         num_replicas: int,
     ) -> int:
         if num_replicas == 0:
-            return 0
+            return len(self.replicas)
 
         completed = 0
         tasks = []
