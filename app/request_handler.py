@@ -38,6 +38,14 @@ class RequestHandler:
             self.replicas: dict[asyncio.StreamWriter, asyncio.StreamReader] = {}
             self.sent_commands: dict[asyncio.StreamWriter, int] = {}
 
+    def from_master(self, peer_info: Tuple[str, int] | None = None):
+        return (
+            peer_info is not None
+            and self.role == "slave"
+            and self.master_host == peer_info[0]
+            and self.master_port == peer_info[1]
+        )
+
     async def handle(
         self,
         input: list | int | str,
@@ -95,7 +103,7 @@ class RequestHandler:
                     if len(input) == 3 and input[1] == "GETACK" and input[2] == "*":
                         # Master asks for Ack
                         if input[2] == "*" and self.role == "slave":
-                            if peer_info:
+                            if self.from_master(peer_info):
                                 print(
                                     "PEER INFO",
                                     peer_info,
@@ -104,21 +112,16 @@ class RequestHandler:
                                     "Master port",
                                     self.master_port,
                                 )
-                                client_host, client_port = peer_info
-                                if (
-                                    client_host == self.master_host
-                                    and client_port == self.master_port
-                                ):
-                                    return Response(
-                                        201,
-                                        RespParser.encode(
-                                            [
-                                                "REPLCONF",
-                                                "ACK",
-                                                f"{self.processed_commands_from_master}",
-                                            ]
-                                        ),
-                                    )  # last arg should be #bytes that replica processed
+                                return Response(
+                                    201,
+                                    RespParser.encode(
+                                        [
+                                            "REPLCONF",
+                                            "ACK",
+                                            f"{self.processed_commands_from_master}",
+                                        ]
+                                    ),
+                                )  # last arg should be #bytes that replica processed
                             else:
                                 print("Not the master but sent an ACK request")
                     elif len(input) == 3 and input[1] == "ACK":

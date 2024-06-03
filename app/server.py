@@ -86,15 +86,11 @@ class Server:
         reader, writer = await asyncio.open_connection(master_host, master_port)
         print(f"Connected to master at {master_host}:{master_port}")
 
-        await self.handshake_with_master(reader, writer)
+        data = await self.handshake_with_master(reader, writer)
+        print(f"After handshake: {data}")
         try:
             data = b""
             while True:
-                data += await reader.read(1024)
-                print("From master", data)
-                if not data:
-                    print("Master closed the connection.")
-                    break
                 try:
                     while (
                         len(data) > 0
@@ -107,6 +103,11 @@ class Server:
                         if ret.code == 201:
                             writer.write(ret.data)
                             await writer.drain()
+                    data += await reader.read(1024)
+                    print("From master", data)
+                    if not data:
+                        print("Master closed the connection.")
+                        break
                 except RespParserError as err:
                     print(f"[WARNING] {err}")
                     pass
@@ -121,9 +122,9 @@ class Server:
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
         timeout: int = 10,
-    ) -> None:
+    ) -> bytes:
         async def send_and_wait(
-            send_data: bytes, stop: Callable[[bytes], bool]
+            send_data: bytes, stop: Callable[[bytes], int]
         ) -> bytes:
             while True:
                 writer.write(send_data)
@@ -132,15 +133,16 @@ class Server:
                 start = datetime.now()
                 while True:
                     recvd_bytes += await reader.read(1024)
-                    if stop(recvd_bytes):
-                        return recvd_bytes
+                    processed = stop(recvd_bytes)
+                    if stop(recvd_bytes) > 0:
+                        return recvd_bytes[processed:]
                     if (datetime.now() - start).total_seconds() > timeout:
                         break
 
         # First, send ping
         await send_and_wait(
             RespParser.encode(["PING"], type="bulk"),
-            lambda x: RespParser.decode(x)[0] == "PONG",
+            lambda x: len(x) if RespParser.decode(x)[0] == "PONG" else 0,
         )
         print("[Handshake] Ping completed")
 
@@ -149,16 +151,16 @@ class Server:
             RespParser.encode(
                 ["REPLCONF", "listening-port", str(self.port)], type="bulk"
             ),
-            lambda x: RespParser.decode(x)[0] == "OK",
+            lambda x: len(x) if RespParser.decode(x)[0] == "OK" else 0,
         )
         print("[Handshake] Replconf completed [1]")
         await send_and_wait(
             RespParser.encode(["REPLCONF", "capa", "psync2"], type="bulk"),
-            lambda x: RespParser.decode(x)[0] == "OK",
+            lambda x: len(x) if RespParser.decode(x)[0] == "OK" else 0,
         )
         print("[Handshake] Replconf completed [2]")
 
-        def get_psync_resp(x: bytes) -> bool:
+        def get_psync_resp(x: bytes) -> int:
             print("[PSYNC]", x)
             length_idx = x.find(b"$")
             length_end_idx = x.find(b"\r\n", length_idx)
@@ -166,15 +168,16 @@ class Server:
                 length = int(x[length_idx + 1 : length_end_idx])
                 if RespParser.decode(x[:length_idx])[0].startswith(
                     "FULLRESYNC"
-                ) and length == len(x) - (length_end_idx + 2):
-                    return True
-            return False
+                ) and length <= len(x) - (length_end_idx + 2):
+                    return (length_end_idx + 2) + length
+            return 0
 
         resp = await send_and_wait(
             RespParser.encode(["PSYNC", "?", "-1"], type="bulk"),
             get_psync_resp,
         )
         print(f"[Handshake] PSYNC completed")
+        return resp
 
     async def start(self) -> None:
         server = await asyncio.start_server(
