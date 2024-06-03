@@ -97,7 +97,8 @@ class RequestHandler:
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
                     return Response(
-                        200, RespParser.encode(self.container.get(input[1]))
+                        200,
+                        RespParser.encode(self.container.get(input[1]), type="bulk"),
                     )
                 case "INFO":
                     if len(input) != 2:
