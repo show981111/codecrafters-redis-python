@@ -1,9 +1,6 @@
 import asyncio
-from copy import deepcopy
-from threading import Timer
 
 from datetime import datetime
-from tkinter import W
 from typing import Tuple
 from app.resp_parser import RespParser
 from app.container import Container
