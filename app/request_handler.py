@@ -51,9 +51,9 @@ class RequestHandler:
         self.rdb_filename = rdbfilename
         if self.dir is not None and self.rdb_filename is not None:
             dbfile = self.dir / self.rdb_filename
-            self.rdb_parser = RdbParser(dbfile)
-            self.rdb_parser.parse()
-            for k, v in self.rdb_parser.kv.items():
+            rdb_parser = RdbParser(dbfile)
+            rdb_parser.parse()
+            for k, v in rdb_parser.kv.items():
                 if "expiry" in v.keys():
                     self.container.set(k, v["value"], expiry=v["expiry"] * 1000)
                 else:

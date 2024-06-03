@@ -6,8 +6,8 @@ from typing import Any
 @dataclass
 class Element:
     value: Any
-    created_at: datetime = datetime.now()
     expiry: float  # in second
+    created_at: datetime = datetime.now()
 
 
 class Container:
