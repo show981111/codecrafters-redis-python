@@ -100,7 +100,7 @@ class RequestHandler:
                             input[1],
                             input[2],
                             expire_at=datetime.now()
-                            + timedelta.seconds(float(input[4]) * 0.001),
+                            + timedelta(milliseconds=int(input[4])),
                         )
                     else:
                         self.container.set(input[1], input[2])
