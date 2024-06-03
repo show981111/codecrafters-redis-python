@@ -54,7 +54,7 @@ class RequestHandler:
             dbfile = self.dir / self.rdb_filename
             if dbfile.is_file():
                 with open(dbfile) as f:
-                    rdb_content = str(dbfile.read())
+                    rdb_content = str(f.read())
                     print(rdb_content)
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
