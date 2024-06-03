@@ -158,7 +158,7 @@ class RequestHandler:
                     self.wait_for = int(input[1])
                     self.timeout = int(input[2])
 
-                    ret = await self.handle_wait()
+                    ret = await self.handle_wait(int(input[2]), int(input[1]))
                     return Response(200, RespParser.encode(ret))
         print("Unknown command")
         return Response(400, b"")
