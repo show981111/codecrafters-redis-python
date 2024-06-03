@@ -25,13 +25,15 @@ async def handle_client(
             print(f"Received {parsed} from {address}")
 
             ret = await request_handler.handle(parsed, len(data), address)
-            if len(ret) == 0:
+            if ret.code == 203:
+                request_handler.replicas[writer] = reader
+            if ret.code == 400:
                 continue
-            if isinstance(ret, list):
-                for item in ret:
+            if isinstance(ret.data, list):
+                for item in ret.data:
                     writer.write(item)
             else:
-                writer.write(ret)
+                writer.write(ret.data)
             await writer.drain()
             print(f"Sent")
             data = b""
@@ -166,7 +168,6 @@ class Server:
             RespParser.encode(["PSYNC", "?", "-1"], type="bulk"),
             get_psync_resp,
         )
-        self.request_handler.replicas[writer] = reader
         print(f"[Handshake] PSYNC completed")
 
     async def start(self) -> None:

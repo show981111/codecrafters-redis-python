@@ -1,9 +1,18 @@
 import asyncio
 
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Tuple
+from typing import Literal, Tuple
 from app.resp_parser import RespParser
 from app.container import Container
+
+
+@dataclass
+class Response:
+    code: Literal[
+        200, 201, 202, 203, 400
+    ]  # 200 response to client, 201 response to master, 202 response to replica,203 replica connection establish, 400 error
+    data: bytes | list[bytes]
 
 
 class RequestHandler:
@@ -34,7 +43,7 @@ class RequestHandler:
         input: list | int | str,
         bytes_length: int = 0,
         peer_info: Tuple[str, int] | None = None,
-    ) -> bytes | list[bytes]:
+    ) -> Response:
         if isinstance(input, list) and isinstance(input[0], str):
             # if (
             #     self.wait
@@ -52,9 +61,9 @@ class RequestHandler:
 
             match input[0].upper():
                 case "ECHO":
-                    return RespParser.encode(input[1])
+                    return Response(200, RespParser.encode(input[1]))
                 case "PING":
-                    return RespParser.encode("PONG")
+                    return Response(200, RespParser.encode("PONG"))
                 case "SET":
                     if len(input) < 3:
                         raise ValueError("Invalid usage of SET")
@@ -63,18 +72,23 @@ class RequestHandler:
                     else:
                         self.container.set(input[1], input[2])
                     await self.propagte_commands(input)
-                    return RespParser.encode("OK")
+                    return Response(200, RespParser.encode("OK"))
                 case "GET":
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
-                    return RespParser.encode(self.container.get(input[1]))
+                    return Response(
+                        200, RespParser.encode(self.container.get(input[1]))
+                    )
                 case "INFO":
                     if len(input) != 2:
                         raise ValueError("Invalid usage of GET")
                     if input[1] == "replication":
-                        return RespParser.encode(
-                            self.get_info(),
-                            type="bulk",
+                        return Response(
+                            200,
+                            RespParser.encode(
+                                self.get_info(),
+                                type="bulk",
+                            ),
                         )
                 case "REPLCONF":
                     print("REPLCONF INPUT", input)
@@ -95,28 +109,34 @@ class RequestHandler:
                                     client_host == self.master_host
                                     and client_port == self.master_port
                                 ):
-                                    return RespParser.encode(
-                                        [
-                                            "REPLCONF",
-                                            "ACK",
-                                            f"{self.processed_commands_from_master}",
-                                        ]
+                                    return Response(
+                                        201,
+                                        RespParser.encode(
+                                            [
+                                                "REPLCONF",
+                                                "ACK",
+                                                f"{self.processed_commands_from_master}",
+                                            ]
+                                        ),
                                     )  # last arg should be #bytes that replica processed
                             else:
                                 print("Not the master but sent an ACK request")
                     elif len(input) == 3 and input[1] == "ACK":
                         offset = int(input[2])  # Response from replica for getAck
 
-                    return RespParser.encode("OK")
+                    return Response(200, RespParser.encode("OK"))
                 case "PSYNC":
                     if self.role != "master":
                         raise ValueError("Role is not a master but got PSYNC ")
-                    return [
-                        RespParser.encode(
-                            f"FULLRESYNC {self.master_replid} {self.master_repl_offset}"
-                        ),
-                        RespParser.encode(RespParser.empty_rdb_hex, type="rdb"),
-                    ]
+                    return Response(
+                        203,
+                        [
+                            RespParser.encode(
+                                f"FULLRESYNC {self.master_replid} {self.master_repl_offset}"
+                            ),
+                            RespParser.encode(RespParser.empty_rdb_hex, type="rdb"),
+                        ],
+                    )
                 case "WAIT":
                     self.wait = True
                     self.wait_started = datetime.now()
@@ -124,9 +144,9 @@ class RequestHandler:
                     self.timeout = int(input[2])
 
                     ret = await self.handle_wait()
-                    return RespParser.encode(ret)
+                    return Response(200, RespParser.encode(ret))
         print("Unknown command")
-        return b""
+        return Response(400, b"")
 
     ##### TODO: Unsure about this part. How to listen do multiple stream readers while we are making sure about the timeout
     ##### and exit condition (stop wait if n number of replicas processed the command)?
