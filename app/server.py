@@ -24,7 +24,7 @@ async def handle_client(
             parsed, _ = RespParser.decode(data)
             print(f"Received {parsed} from {address}")
 
-            ret = await request_handler.handle(parsed, writer)
+            ret = await request_handler.handle(parsed, len(data), address)
             if len(ret) == 0:
                 continue
             if isinstance(ret, list):
@@ -97,6 +97,7 @@ class Server:
                     while (
                         len(data) > 0
                     ):  # Process multiple commands came as a chunk in data!
+                        self.request_handler.processed_commands_from_master += len(data)
                         parsed, data = RespParser.decode(data)
                         ret = await self.request_handler.handle(parsed)
                 except RespParserError as err:
@@ -165,6 +166,7 @@ class Server:
             RespParser.encode(["PSYNC", "?", "-1"], type="bulk"),
             get_psync_resp,
         )
+        self.request_handler.replicas[writer] = reader
         print(f"[Handshake] PSYNC completed")
 
     async def start(self) -> None:
