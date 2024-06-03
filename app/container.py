@@ -30,3 +30,14 @@ class Container:
         self.kv[key] = Element(
             value=value, created_at=datetime.now(), expiry=expiry * 0.001
         )
+
+    def keys(self) -> list:
+        res = []
+        for k in self.kv.keys():
+            if (datetime.now() - self.kv[k].created_at).total_seconds() > self.kv[
+                k
+            ].expiry:
+                self.kv.pop(k)
+            else:
+                res.append(k)
+        return res
