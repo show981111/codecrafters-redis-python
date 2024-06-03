@@ -158,9 +158,13 @@ class RequestHandler:
                     send_data = RespParser.encode(
                         ["REPLCONF", "GETACK", "*"], type="bulk"
                     )
+
                     for wr in self.replicas.keys():
-                        wr.write(send_data)
-                        await wr.drain()
+                        if self.sent_commands[wr] == 0:
+                            self.responded_replica += 1
+                        else:
+                            wr.write(send_data)
+                            await wr.drain()
 
                     try:
                         async with asyncio.timeout(int(input[2]) / 1000):
