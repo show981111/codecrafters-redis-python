@@ -22,7 +22,7 @@ class RdbParser:
         print(f"[Hex data] {res}")
         idxofb = res.index("fb")
         idxoff = res.index("ff")
-        d = res[idxofb + 1 : idxoff]
+        d = res[idxofb:idxoff].split(" ")
         print("[d]", d)
         # lst = res[idxofb + 1 : idxoff].split("00")
         # reslst = []
