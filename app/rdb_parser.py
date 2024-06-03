@@ -72,3 +72,7 @@ class RdbParser:
         for k in self.kv:
             result.append(k)
         return result
+
+
+# p = RdbParser(Path("./file.bin"))
+# p.get_keys()
