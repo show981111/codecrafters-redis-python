@@ -77,10 +77,19 @@ class RequestHandler:
                             type="bulk",
                         )
                 case "REPLCONF":
+                    print("REPLCONF INPUT", input)
                     if len(input) == 3 and input[1] == "GETACK" and input[2] == "*":
                         # Master asks for Ack
                         if input[2] == "*" and self.role == "slave":
                             if peer_info:
+                                print(
+                                    "PEER INFO",
+                                    peer_info,
+                                    "Master host",
+                                    self.master_host,
+                                    "Master port",
+                                    self.master_port,
+                                )
                                 client_host, client_port = peer_info
                                 if (
                                     client_host == self.master_host
