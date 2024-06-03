@@ -5,6 +5,7 @@ from pathlib import Path
 class RdbParser:
     def __init__(self, file: Path):
         self.db_file = file
+        self.kv = {}
 
     def _read_data(self) -> bytes:
         if self.db_file.is_file():
