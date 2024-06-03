@@ -23,14 +23,17 @@ class RdbParser:
         idxofb = res.index("fb")
         idxoff = res.index("ff")
 
-        lst = res[idxofb:idxoff].split("00")
+        lst = res[idxofb + 1 : idxoff].split("00")
         reslst = []
         for x in lst:
             reslst.append(str(x).strip().split(" "))
+        print("[lst]", lst)
         print("[reslst]", reslst)
         hash_table_size = int(reslst[0], 16)
         exp_hash_table_size = int(reslst[1], 16)
-        reslst.pop(1)  # pop fb
+        exp_table: list = []
+        while len(exp_table) < exp_hash_table_size:
+            exp_table.append()
         return reslst
 
     def _extract_key_value_pairs(self, data: list):
@@ -39,6 +42,8 @@ class RdbParser:
         data.pop(0)
         result = {}
         for x in data:
+            if len(x) == 0:
+                continue
             lengthKey = int(x[0])
             l1 = x[1 : lengthKey + 1]
             l2 = x[lengthKey + 1 :]
