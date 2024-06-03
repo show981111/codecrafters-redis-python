@@ -202,6 +202,7 @@ class RequestHandler:
                                 ),
                             )
                 case "KEYS":
+                    print("KEY IS CALLED", input)
                     if len(input) == 2 and input[1] == "*":
                         return Response(
                             200,
