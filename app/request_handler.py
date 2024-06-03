@@ -49,10 +49,10 @@ class RequestHandler:
             )
         self.dir = dir
         self.rdb_filename = rdbfilename
-        if self.dir is not None and self.rdb_filename is not None:
-            dbfile = self.dir / self.rdb_filename
-            self.rdb_parser = RdbParser(dbfile)
-            self.rdb_parser.get_keys()
+        # if self.dir is not None and self.rdb_filename is not None:
+        #     dbfile = self.dir / self.rdb_filename
+        #     self.rdb_parser = RdbParser(dbfile)
+        #     self.rdb_parser.get_keys()
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):
@@ -192,7 +192,12 @@ class RequestHandler:
                                 ),
                             )
                 case "KEYS":
-                    pass
+                    if len(input) == 2 and input[1] == "*":
+                        if self.dir is not None and self.rdb_filename is not None:
+                            dbfile = self.dir / self.rdb_filename
+                            self.rdb_parser = RdbParser(dbfile)
+                            k = self.rdb_parser.get_keys()
+                            return RespParser.encode(k, type="bulk")
         print("Unknown command")
         return Response(400, b"")
 
