@@ -87,9 +87,8 @@ class Server:
         print(f"Connected to master at {master_host}:{master_port}")
 
         data = await self.handshake_with_master(reader, writer)
-        print(f"After handshake: {data}")
+        print(f"[After handshake]: {data}")
         try:
-            data = b""
             while True:
                 try:
                     while (
