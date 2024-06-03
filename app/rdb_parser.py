@@ -1,36 +1,15 @@
-from rdbtools import RdbParser, RdbCallback
-from rdbtools.encodehelpers import bytes_to_unicode
+def parse_redis_file_format(data: str):
+    splited_parts = data.split("\\")
+    resizedb_index = splited_parts.index("xfb")
+    key_index = resizedb_index + 4
+    value_index = key_index + 1
+    key_bytes = splited_parts[key_index]
+    key = remove_bytes_caracteres(key_bytes)
+    return key
 
 
-class RdbParserCallback(RdbCallback):
-    """Simple example to show how callback works.
-    See RdbCallback for all available callback methods.
-    See JsonCallback for a concrete example
-    """
-
-    def __init__(self):
-        super(RdbParserCallback, self).__init__(string_escape=None)
-
-    def encode_key(self, key):
-        return bytes_to_unicode(key, self._escape, skip_printable=True)
-
-    def encode_value(self, val):
-        return bytes_to_unicode(val, self._escape)
-
-    def set(self, key, value, expiry, info):
-        print("%s = %s" % (self.encode_key(key), self.encode_value(value)))
-
-    def hset(self, key, field, value):
-        print(
-            "%s.%s = %s"
-            % (self.encode_key(key), self.encode_key(field), self.encode_value(value))
-        )
-
-    def sadd(self, key, member):
-        print("%s has {%s}" % (self.encode_key(key), self.encode_value(member)))
-
-    def rpush(self, key, value):
-        print("%s has [%s]" % (self.encode_key(key), self.encode_value(value)))
-
-    def zadd(self, key, score, member):
-        print("%s has {%s : %s}" % (str(key), str(member), str(score)))
+def remove_bytes_caracteres(string: str):
+    if string.startswith("x"):
+        return string[3:]
+    elif string.startswith("t"):
+        return string[1:]

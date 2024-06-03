@@ -2,12 +2,10 @@ import asyncio
 
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Literal, Tuple
 
 from rdbtools import RdbParser
-from app.rdb_parser import RdbParserCallback
 from app.resp_parser import RespParser
 from app.container import Container
 
@@ -53,11 +51,11 @@ class RequestHandler:
         self.rdb_filename = rdbfilename
 
         if self.dir is not None and self.rdb_filename is not None:
-            callback = RdbParserCallback()
-            parser = RdbParser(callback)
             dbfile = self.dir / self.rdb_filename
             if dbfile.is_file():
-                parser.parse(self.dir / self.rdb_filename)
+                with open(dbfile) as f:
+                    rdb_content = str(dbfile.read())
+                    print(rdb_content)
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):
