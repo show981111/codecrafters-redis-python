@@ -55,7 +55,7 @@ class RequestHandler:
             rdb_parser = RdbParser(dbfile)
             rdb_parser.parse()
             for k, v in rdb_parser.kv.items():
-                if "expiry" in v.keys():
+                if "expiry" in v.keys() and v["expiry"] is not None:
                     self.container.set(
                         k,
                         v["value"],
