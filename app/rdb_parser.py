@@ -22,15 +22,16 @@ class RdbParser:
         print(f"[Hex data] {res}")
         idxofb = res.index("fb")
         idxoff = res.index("ff")
+
         lst = res[idxofb:idxoff].split("00")
         reslst = []
         for x in lst:
             reslst.append(str(x).strip().split(" "))
-        reslst.pop(1)
+        print("[reslst]", reslst)
+        hash_table_size = int(reslst[0], 16)
+        exp_hash_table_size = int(reslst[1], 16)
+        reslst.pop(1)  # pop fb
         return reslst
-
-    def _get_hash_size(self, data):
-        return data[0][1]
 
     def _extract_key_value_pairs(self, data: list):
         if data == None:
