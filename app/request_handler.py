@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Tuple
 
-from rdbtools import RdbParser
 from app.resp_parser import RespParser
 from app.container import Container
 
