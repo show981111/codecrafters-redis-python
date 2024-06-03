@@ -19,6 +19,7 @@ class RdbParser:
         if data == b"":
             return None
         res = data.hex(" ")
+        print(f"[Hex data] {res}")
         idxofb = res.index("fb")
         idxoff = res.index("ff")
         lst = res[idxofb:idxoff].split("00")
