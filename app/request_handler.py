@@ -170,6 +170,9 @@ class RequestHandler:
         timeout: int,
         num_replicas: int,
     ) -> int:
+        if num_replicas == 0:
+            return 0
+
         completed = 0
         tasks = []
         for writer, reader in self.replicas.items():
