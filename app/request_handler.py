@@ -210,6 +210,8 @@ class RequestHandler:
                                     self.container.kv.keys(), type="bulk"
                                 ),
                             )
+                        else:
+                            print("KEYS requested when there is no files.")
         print("Unknown command")
         return Response(400, b"")
 
