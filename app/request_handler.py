@@ -130,8 +130,7 @@ class RequestHandler:
                                         [
                                             "REPLCONF",
                                             "ACK",
-                                            "0",
-                                            # f"{self.processed_commands_from_master}",
+                                            f"{self.processed_commands_from_master}",
                                         ]
                                     ),
                                 )  # last arg should be #bytes that replica processed
