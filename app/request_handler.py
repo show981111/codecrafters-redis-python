@@ -161,6 +161,7 @@ class RequestHandler:
 
                     for wr in self.replicas.keys():
                         if self.sent_commands[wr] == 0:
+                            print("Haven't sent anything...")
                             self.responded_replica += 1
                         else:
                             wr.write(send_data)
@@ -175,8 +176,8 @@ class RequestHandler:
                         pass
 
                     for wr in self.replicas.keys():
-                        self.sent_commands[wr] += len(send_data)
-
+                        if self.sent_commands[wr] > 0:
+                            self.sent_commands[wr] += len(send_data)
                     # ret = await self.handle_wait(int(input[2]) / 1000, int(input[1]))
                     return Response(200, RespParser.encode(self.responded_replica))
         print("Unknown command")
