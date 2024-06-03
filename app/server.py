@@ -27,6 +27,7 @@ async def handle_client(
             ret = await request_handler.handle(parsed, len(data), address)
             if ret.code == 203:
                 request_handler.replicas[writer] = reader
+                request_handler.replica_addr_to_writer[address] = writer
             if ret.code == 400:
                 continue
             if isinstance(ret.data, list):
@@ -38,12 +39,13 @@ async def handle_client(
             print(f"Sent")
             data = b""
         except RespParserError as err:
-            print(f"[WARNING] {err}")
-            pass
+            print(f"[WARNING] {err}: {data}")
+            if len(data) == 0:
+                break
     # comes here only when the connection is closed.
     print(f"Closed connection to {address}")
     writer.close()
-    request_handler.discard_wr(writer)
+    request_handler.discard_wr(writer, address)
     await writer.wait_closed()
 
 
@@ -100,6 +102,7 @@ class Server:
                             parsed, peer_info=writer.get_extra_info("peername")
                         )
                         if ret.code == 201:
+                            print(f"Returning: {ret.data}")
                             writer.write(ret.data)
                             await writer.drain()
                         self.request_handler.processed_commands_from_master += (
@@ -111,7 +114,7 @@ class Server:
                         print("Master closed the connection.")
                         break
                 except RespParserError as err:
-                    print(f"[WARNING] {err}")
+                    print(f"[WARNING] {err}: {data}")
                     pass
         except asyncio.CancelledError:
             pass

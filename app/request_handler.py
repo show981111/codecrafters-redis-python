@@ -37,6 +37,9 @@ class RequestHandler:
             self.master_replid = master_replid
             self.master_repl_offset = master_repl_offset
             self.replicas: dict[asyncio.StreamWriter, asyncio.StreamReader] = {}
+            self.replica_addr_to_writer: dict[Tuple[str, int], asyncio.StreamWriter] = (
+                {}
+            )
             self.sent_commands: defaultdict[asyncio.StreamWriter, int] = defaultdict(
                 int
             )
@@ -123,14 +126,19 @@ class RequestHandler:
                                             "REPLCONF",
                                             "ACK",
                                             f"{self.processed_commands_from_master}",
-                                        ]
+                                        ],
+                                        type="bulk",
                                     ),
                                 )  # last arg should be #bytes that replica processed
                             else:
                                 print("Not the master but sent an ACK request")
                     elif len(input) == 3 and input[1] == "ACK":
-                        offset = int(input[2])  # Response from replica for getAck
-
+                        print("ACK FROM REPLICA", input)
+                        if self.wait and self.sent_commands[
+                            self.replica_addr_to_writer[peer_info]
+                        ] == int(input[2]):
+                            self.responded_replica += 1
+                        return Response(202, b"")
                     return Response(200, RespParser.encode("OK"))
                 case "PSYNC":
                     if self.role != "master":
@@ -145,13 +153,28 @@ class RequestHandler:
                         ],
                     )
                 case "WAIT":
-                    # self.wait = True
-                    # self.wait_started = datetime.now()
-                    # self.wait_for = int(input[1])
-                    # self.timeout = int(input[2])
+                    self.wait = True
+                    self.responded_replica = 0
+                    send_data = RespParser.encode(
+                        ["REPLCONF", "GETACK", "*"], type="bulk"
+                    )
+                    for wr in self.replicas.keys():
+                        wr.write(send_data)
+                        await wr.drain()
 
-                    ret = await self.handle_wait(int(input[2]), int(input[1]))
-                    return Response(200, RespParser.encode(ret))
+                    try:
+                        async with asyncio.timeout(int(input[2]) / 1000):
+                            while self.responded_replica < int(input[1]):
+                                await asyncio.sleep(0)
+                                continue
+                    except asyncio.TimeoutError:
+                        pass
+
+                    for wr in self.replicas.keys():
+                        self.sent_commands[wr] += len(send_data)
+
+                    # ret = await self.handle_wait(int(input[2]) / 1000, int(input[1]))
+                    return Response(200, RespParser.encode(self.responded_replica))
         print("Unknown command")
         return Response(400, b"")
 
@@ -159,7 +182,7 @@ class RequestHandler:
     ##### and exit condition (stop wait if n number of replicas processed the command)?
     async def handle_wait(
         self,
-        timeout: int,
+        timeout: float,  # in MS
         num_replicas: int,
     ) -> int:
         # if num_replicas == 0:
@@ -177,7 +200,7 @@ class RequestHandler:
                 if expect == 0:
                     return writer
                 print(f"Expecting {expect} number of bytes...")
-                send_data = RespParser.encode(["REPLCONF", "GETACK", "*"])
+                send_data = RespParser.encode(["REPLCONF", "GETACK", "*"], type="bulk")
                 while True:  # Send & recv loop
                     send = False
                     writer.write(send_data)
@@ -206,7 +229,7 @@ class RequestHandler:
                             break
 
             tasks.append(  # run this function for max timeout. So that the as_completed can exit within timeout.
-                asyncio.wait_for(wait_for_ack(writer, reader), timeout=timeout)
+                asyncio.wait_for(wait_for_ack(writer, reader), timeout=timeout + 0.1)
             )
 
         for coroutine in asyncio.as_completed(tasks):
@@ -221,6 +244,7 @@ class RequestHandler:
                         return completed
 
             except Exception as e:
+                print(f"[Wait_for_ack] errored out: {e}")
                 pass
         print("[Handle wait] Nothing returned so timed out!")
         return completed
@@ -240,6 +264,7 @@ class RequestHandler:
                 await wr.drain()
                 print("Propagete Done!")
 
-    def discard_wr(self, wr: asyncio.StreamWriter) -> None:
+    def discard_wr(self, wr: asyncio.StreamWriter, address: Tuple[str, int]) -> None:
         if self.role == "master" and wr in self.replicas.keys():
             self.replicas.pop(wr)
+            self.replica_addr_to_writer.pop(address)
