@@ -52,8 +52,8 @@ class RequestHandler:
         if self.dir is not None and self.rdb_filename is not None:
             dbfile = self.dir / self.rdb_filename
             if dbfile.is_file():
-                with open(dbfile) as f:
-                    rdb_content = str(f.read())
+                with open(dbfile, "rb") as f:
+                    rdb_content = f.read()
                     print(rdb_content)
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
