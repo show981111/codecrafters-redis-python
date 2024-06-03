@@ -153,10 +153,10 @@ class RequestHandler:
                         ],
                     )
                 case "WAIT":
-                    self.wait = True
-                    self.wait_started = datetime.now()
-                    self.wait_for = int(input[1])
-                    self.timeout = int(input[2])
+                    # self.wait = True
+                    # self.wait_started = datetime.now()
+                    # self.wait_for = int(input[1])
+                    # self.timeout = int(input[2])
 
                     ret = await self.handle_wait(int(input[2]), int(input[1]))
                     return Response(200, RespParser.encode(ret))
@@ -170,9 +170,8 @@ class RequestHandler:
         timeout: int,
         num_replicas: int,
     ) -> int:
-        if num_replicas == 0:
-            return 0
-        return len(self.replicas)
+        # if num_replicas == 0:
+        #     return 0
 
         completed = 0
         tasks = []
