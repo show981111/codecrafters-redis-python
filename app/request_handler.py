@@ -116,14 +116,6 @@ class RequestHandler:
                         # Master asks for Ack
                         if input[2] == "*" and self.role == "slave":
                             if self.from_master(peer_info):
-                                print(
-                                    "PEER INFO",
-                                    peer_info,
-                                    "Master host",
-                                    self.master_host,
-                                    "Master port",
-                                    self.master_port,
-                                )
                                 return Response(
                                     201,
                                     RespParser.encode(
@@ -172,7 +164,7 @@ class RequestHandler:
     ) -> int:
         # if num_replicas == 0:
         #     return 0
-
+        print("[Handle wait]")
         completed = 0
         tasks = []
         for writer, reader in self.replicas.items():
@@ -184,6 +176,7 @@ class RequestHandler:
                 expect = self.sent_commands[writer]
                 if expect == 0:
                     return writer
+                print(f"Expecting {expect} number of bytes...")
                 send_data = RespParser.encode(["REPLCONF", "GETACK", "*"])
                 while True:  # Send & recv loop
                     send = False
@@ -195,6 +188,7 @@ class RequestHandler:
                         data += await reader.read(512)
                         if data:
                             parsed, _ = RespParser.decode(data)
+                            print(f"Received {parsed} from reader")
                             if (
                                 len(parsed) == 3
                                 and parsed[0].upper() == "REPLCONF"
@@ -221,6 +215,7 @@ class RequestHandler:
                 if ret:
                     completed += 1
                     if completed >= num_replicas:
+                        print(f"Completed: {completed}")
                         # Note: Due to this, the result will never be greater than num_replicas...
                         # However, we don't know when the next task will be done. So it is an early exit, without waiting for all "timeout"
                         return completed
