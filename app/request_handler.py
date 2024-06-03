@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Literal, Tuple
+
+from rdbtools import RdbParser
+from app.rdb_parser import RdbParserCallback
 from app.resp_parser import RespParser
 from app.container import Container
 
@@ -48,6 +51,13 @@ class RequestHandler:
             )
         self.dir = dir
         self.rdb_filename = rdbfilename
+
+        if self.dir is not None and self.rdb_filename is not None:
+            callback = RdbParserCallback()
+            parser = RdbParser(callback)
+            dbfile = self.dir / self.rdb_filename
+            if dbfile.is_file():
+                parser.parse(self.dir / self.rdb_filename)
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):
@@ -186,6 +196,8 @@ class RequestHandler:
                                     ["dir", self.rdb_filename], type="bulk"
                                 ),
                             )
+                case "KEYS":
+                    pass
         print("Unknown command")
         return Response(400, b"")
 
