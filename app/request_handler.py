@@ -39,6 +39,7 @@ class RequestHandler:
             self.sent_commands: dict[asyncio.StreamWriter, int] = {}
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
+        print("FROM MASTER", peer_info)
         return (
             peer_info is not None
             and self.role == "slave"
