@@ -6,7 +6,7 @@ from typing import Any
 @dataclass
 class Element:
     value: Any
-    expiry: float  # in second
+    expire_at: datetime = datetime.max
     created_at: datetime = datetime.now()
 
 
@@ -17,26 +17,24 @@ class Container:
     def get(self, key):
         if key not in self.kv.keys():
             return None
-        elif (datetime.now() - self.kv[key].created_at).total_seconds() > self.kv[
-            key
-        ].expiry:
+        elif datetime.now() > self.kv[key].expire_at:
             self.kv.pop(key)
             return None
         else:
             return self.kv[key].value
 
-    def set(self, key, value, expiry=float("inf")):  # expiry input is in ms
-        print(f"Set {key} = {value}, with expiry = {expiry* 0.001}")
+    def set(
+        self, key, value, expire_at: datetime = datetime.max
+    ):  # expiry input is in ms
+        print(f"Set {key} = {value}, with expiry = {expire_at}")
         self.kv[key] = Element(
-            value=value, created_at=datetime.now(), expiry=expiry * 0.001
+            value=value, created_at=datetime.now(), expire_at=expire_at
         )
 
     def keys(self) -> list:
         res = []
         for k in self.kv.keys():
-            if (datetime.now() - self.kv[k].created_at).total_seconds() > self.kv[
-                k
-            ].expiry:
+            if datetime.now() > self.kv[k].expire_at:
                 self.kv.pop(k)
             else:
                 res.append(k)

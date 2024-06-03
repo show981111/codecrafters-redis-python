@@ -2,6 +2,7 @@ import asyncio
 
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal, Tuple
 
@@ -55,7 +56,11 @@ class RequestHandler:
             rdb_parser.parse()
             for k, v in rdb_parser.kv.items():
                 if "expiry" in v.keys():
-                    self.container.set(k, v["value"], expiry=v["expiry"] * 1000)
+                    self.container.set(
+                        k,
+                        v["value"],
+                        expire_at=datetime.fromtimestamp(v["expiry"] / 1000.0),
+                    )
                 else:
                     self.container.set(k, v["value"])
 
@@ -91,7 +96,12 @@ class RequestHandler:
                     if len(input) < 3:
                         raise ValueError("Invalid usage of SET")
                     if len(input) == 5 and input[3] == "px":
-                        self.container.set(input[1], input[2], expiry=float(input[4]))
+                        self.container.set(
+                            input[1],
+                            input[2],
+                            expire_at=datetime.now()
+                            + timedelta.seconds(float(input[4]) * 0.001),
+                        )
                     else:
                         self.container.set(input[1], input[2])
                     await self.propagte_commands(input)
