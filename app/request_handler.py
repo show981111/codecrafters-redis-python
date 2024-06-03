@@ -39,11 +39,19 @@ class RequestHandler:
             self.sent_commands: dict[asyncio.StreamWriter, int] = {}
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
+        def is_local_host(address):
+            # Check if the address is loopback
+            if address == "127.0.0.1" or address == "::1" or address == "localhost":
+                return True
+
         print("FROM MASTER", peer_info)
         return (
             peer_info is not None
             and self.role == "slave"
-            and self.master_host == peer_info[0]
+            and (
+                self.master_host == peer_info[0]
+                or (is_local_host(self.master_host) and is_local_host(peer_info[0]))
+            )
             and self.master_port == peer_info[1]
         )
 
