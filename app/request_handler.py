@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Tuple
 
+from app.rdb_parser import RdbParser
 from app.resp_parser import RespParser
 from app.container import Container
 
@@ -48,13 +49,10 @@ class RequestHandler:
             )
         self.dir = dir
         self.rdb_filename = rdbfilename
-
         if self.dir is not None and self.rdb_filename is not None:
             dbfile = self.dir / self.rdb_filename
-            if dbfile.is_file():
-                with open(dbfile, "rb") as f:
-                    rdb_content = f.read()
-                    print(rdb_content)
+            self.rdb_parser = RdbParser(dbfile)
+            self.rdb_parser.get_keys()
 
     def from_master(self, peer_info: Tuple[str, int] | None = None):
         def is_local_host(address):
