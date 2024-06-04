@@ -14,12 +14,12 @@ class Element:
 @dataclass
 class StreamEntry:
     id: str
-    data: dict = {}
+    data: dict
 
 
 @dataclass
 class StreamEntries:
-    entries: list[StreamEntry] = []
+    entries: list[StreamEntry]
 
 
 class Container:
