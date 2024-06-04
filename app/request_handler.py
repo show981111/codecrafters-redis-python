@@ -215,11 +215,21 @@ class RequestHandler:
                                 ),
                             )
                 case "KEYS":
-                    print("KEY IS CALLED", input, self.container.keys())
                     if len(input) == 2 and input[1] == "*":
                         return Response(
                             200,
                             RespParser.encode(self.container.keys(), type="bulk"),
+                        )
+                case "TYPE":
+                    if len(input) == 2 and input[1] in self.container.kv:
+                        return Response(
+                            200,
+                            RespParser.encode(self.container.kv[input[1]].type),
+                        )
+                    else:
+                        return Response(
+                            200,
+                            RespParser.encode("none"),
                         )
 
         print("Unknown command")

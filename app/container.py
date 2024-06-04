@@ -8,6 +8,7 @@ class Element:
     value: Any
     expire_at: datetime = datetime.max
     created_at: datetime = datetime.now()
+    type: str = "string"
 
 
 class Container:
