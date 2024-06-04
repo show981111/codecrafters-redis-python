@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 
 @dataclass
@@ -8,7 +8,18 @@ class Element:
     value: Any
     expire_at: datetime = datetime.max
     created_at: datetime = datetime.now()
-    type: str = "string"
+    type: Literal["string", "stream"] = "string"
+
+
+@dataclass
+class StreamEntry:
+    id: str
+    data: dict = {}
+
+
+@dataclass
+class StreamEntries:
+    entries: list[StreamEntry] = []
 
 
 class Container:
@@ -28,9 +39,20 @@ class Container:
         self, key, value, expire_at: datetime = datetime.max
     ):  # expiry input is in ms
         print(f"Set {key} = {value}, with expiry = {expire_at}")
-        self.kv[key] = Element(
-            value=value, created_at=datetime.now(), expire_at=expire_at
-        )
+        if isinstance(value, StreamEntry):
+            if key in self.kv.keys():
+                self.kv[key].value.entries.append(value)
+            else:
+                self.kv[key] = Element(
+                    value=StreamEntries(entries=[value]),
+                    created_at=datetime.now(),
+                    expire_at=expire_at,
+                    type="stream",
+                )
+        else:
+            self.kv[key] = Element(
+                value=value, created_at=datetime.now(), expire_at=expire_at
+            )
 
     def keys(self) -> list:
         res = []

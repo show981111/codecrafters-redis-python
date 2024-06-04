@@ -8,7 +8,7 @@ from typing import Literal, Tuple
 
 from app.rdb_parser import RdbParser
 from app.resp_parser import RespParser
-from app.container import Container
+from app.container import Container, StreamEntry
 
 
 @dataclass
@@ -231,7 +231,23 @@ class RequestHandler:
                             200,
                             RespParser.encode("none"),
                         )
-
+                case "XADD":
+                    if len(input) < 3:
+                        raise ValueError("Invalid input")
+                    stream_key = input[1]
+                    stream_id = input[2]
+                    data = {}
+                    for i in range(3, len(input), 2):
+                        if i + 1 >= len(input):
+                            raise ValueError("Missing value")
+                        data[input[i]] = input[i + 1]
+                    self.container.set(
+                        key=stream_key, value=StreamEntry(id=stream_id, data=data)
+                    )
+                    return Response(
+                        200,
+                        RespParser.encode(stream_id),
+                    )
         print("Unknown command")
         return Response(400, b"")
 
