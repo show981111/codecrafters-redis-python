@@ -44,11 +44,11 @@ class Container:
                 id_of_last_entry = (
                     self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
                 )
-                if not self._less_than(id_of_last_entry, value.id):
+                if not Container._less_than(id_of_last_entry, value.id):
                     raise ValueError(f"Invalid key {id_of_last_entry} >= {value.id}")
                 self.kv[key].value.entries.append(value)
             else:
-                if not self._less_than("0-0", value.id):
+                if not Container._less_than("0-0", value.id):
                     raise ValueError(f"Invalid key 0-0 >= {value.id}")
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
@@ -70,6 +70,7 @@ class Container:
                 res.append(k)
         return res
 
+    @staticmethod
     def _less_than(a: str, b: str) -> bool:  # True if a < b
         ac = a.split("-")
         bc = b.split("-")
