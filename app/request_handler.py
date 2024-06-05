@@ -319,6 +319,7 @@ class RequestHandler:
                         pass  # unknown key
                 case "XREAD":
                     xread = Xread.parse(input)
+                    print("XREAD", xread)
                     if xread.block:
                         if xread.block_duration > 0:
                             # Block this task for this period of time!
