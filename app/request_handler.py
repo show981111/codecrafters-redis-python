@@ -26,7 +26,7 @@ class Xread:
     block: bool
     block_duration: int | None  # sec
     stream_keys: list
-    starts: list
+    starts: list[StreamEntry]
 
     @staticmethod
     def parse(input: list) -> Xread:
@@ -321,9 +321,8 @@ class RequestHandler:
                     xread = Xread.parse(input)
                     if xread.block:
                         if xread.block_duration > 0:
-                            await asyncio.sleep(
-                                xread.block_duration
-                            )  # Block this task for this period of time!
+                            # Block this task for this period of time!
+                            await asyncio.sleep(xread.block_duration)
                         else:  # block until there is an item added (busy wait)
                             while result := self.container.get_after_excl(
                                 xread.stream_keys, xread.starts

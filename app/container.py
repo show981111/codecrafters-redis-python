@@ -106,12 +106,20 @@ class Container:
                 res.append(k)
         return res
 
-    def get_after_excl(self, stream_keys: list, starts: list) -> Tuple[list, int]:
+    def get_after_excl(
+        self, stream_keys: list, starts: list[StreamEntry]
+    ) -> Tuple[list, int]:
         entry_length = 0
         res = []
         for idx, stream_key in enumerate(stream_keys):
             if stream_key in self.keys():
                 entries = self.get(stream_key).entries
+                if starts[idx] == "$":
+                    # then set it to max so far
+                    if len(entries) == 0:
+                        starts[idx] = "0-0"
+                    else:
+                        starts[idx] = entries[len(entries) - 1]
                 start_excl = bisect.bisect_right(
                     entries,
                     StreamEntries.key_func(starts[idx]),
