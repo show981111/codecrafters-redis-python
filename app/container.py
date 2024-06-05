@@ -40,9 +40,9 @@ class Container:
     ):  # expiry input is in ms
         print(f"Set {key} = {value}, with expiry = {expire_at}")
         if isinstance(value, StreamEntry):
-            if not Container._less_than(
+            if not Container._auto_populate(value.id) and not Container._less_than(
                 "0-0", value.id
-            ) and not Container._auto_populate(value.id):
+            ):
                 raise ValueError(
                     f"ERR The ID specified in XADD must be greater than 0-0"
                 )
