@@ -97,14 +97,15 @@ class Container:
             components.append("*")
 
         if components[1] == "*":
-            if id_of_last_entry is not None and int(
-                id_of_last_entry.split("-")[0]
-            ) == int(components[0]):
+            if (
+                id_of_last_entry is not None
+                and id_of_last_entry.split("-")[0] == components[0]
+            ):
                 last_seq = int(id_of_last_entry.split("-")[1])
-            elif id_of_last_entry is not None:
-                last_seq = -1
-            else:
+            elif id_of_last_entry is None or components[0] == "0":
                 last_seq = 0
+            else:
+                last_seq = 1
             components[1] = str(last_seq + 1)
             return "-".join(components)
         else:
