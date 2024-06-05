@@ -245,10 +245,10 @@ class RequestHandler:
                         self.container.set(
                             key=stream_key, value=StreamEntry(id=stream_id, data=data)
                         )
-                        elem = self.container.get(stream_key)
+                        entries = self.container.get(stream_key).entries
                         return Response(
                             200,
-                            RespParser.encode(elem[len(elem) - 1].id),
+                            RespParser.encode(entries[len(entries) - 1].id),
                         )
                     except ValueError as err:
                         return Response(
