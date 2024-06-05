@@ -58,6 +58,7 @@ class Container:
                     )
                 self.kv[key].value.entries.append(value)
             else:
+                value.id = Container._populate_entry_id(value.id, id_of_last_entry)
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
                     created_at=datetime.now(),
@@ -91,7 +92,10 @@ class Container:
         if components[0] == "*":
             pass
         elif components[1] == "*":
-            last_seq = int(id_of_last_entry.split("-")[1])
+            if id_of_last_entry is not None:
+                last_seq = int(id_of_last_entry.split("-")[1])
+            else:
+                last_seq = 0
             components[1] = str(last_seq + 1)
             return "-".join(components)
         else:
