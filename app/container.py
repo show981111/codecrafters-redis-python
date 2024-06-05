@@ -95,7 +95,7 @@ class Container:
         elif components[1] == "*":
             if id_of_last_entry is not None and int(
                 id_of_last_entry.split("-")[0]
-            ) != int(components[0]):
+            ) == int(components[0]):
                 last_seq = int(id_of_last_entry.split("-")[1])
             else:
                 last_seq = 0
