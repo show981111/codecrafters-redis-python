@@ -286,16 +286,17 @@ class RequestHandler:
                         stream_key = input[2]
                         if stream_key in self.container.keys():
                             entries = self.container.get(stream_key).entries
-                            excl = bisect.bisect_right(
+                            start = StreamEntry(id=input[3], data={})
+                            start_excl = bisect.bisect_right(
                                 entries,
-                                StreamEntries.key_func(end),
+                                StreamEntries.key_func(start),
                                 key=StreamEntries.key_func,
                             )
                             # if excl < len(entries):
                             return Response(
                                 200,
                                 RespParser.encode(
-                                    [[stream_key, [entries[excl:]]]], type="bulk"
+                                    [[stream_key, [entries[start_excl:]]]], type="bulk"
                                 ),
                             )
         print("Unknown command")
