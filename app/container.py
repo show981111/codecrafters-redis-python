@@ -45,11 +45,15 @@ class Container:
                     self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
                 )
                 if not Container._less_than(id_of_last_entry, value.id):
-                    raise ValueError(f"Invalid key {id_of_last_entry} >= {value.id}")
+                    raise ValueError(
+                        f"ERR The ID specified in XADD is equal or smaller than the target stream top item"
+                    )
                 self.kv[key].value.entries.append(value)
             else:
                 if not Container._less_than("0-0", value.id):
-                    raise ValueError(f"Invalid key 0-0 >= {value.id}")
+                    raise ValueError(
+                        f"ERR The ID specified in XADD must be greater than 0-0"
+                    )
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
                     created_at=datetime.now(),

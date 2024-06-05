@@ -249,11 +249,11 @@ class RequestHandler:
                             200,
                             RespParser.encode(stream_id),
                         )
-                    except ValueError:
+                    except ValueError as err:
                         return Response(
                             200,
                             RespParser.encode(
-                                "ERR The ID specified in XADD is equal or smaller than the target stream top item",
+                                str(err),
                                 type="err",
                             ),
                         )
