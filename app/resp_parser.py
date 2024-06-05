@@ -1,5 +1,7 @@
 from typing import Final, Literal
 
+from app.container import StreamEntry
+
 
 class RespParser:
 
@@ -16,6 +18,12 @@ class RespParser:
             return f"$-1\r\n".encode()
         elif type == "err":
             return f"-{data}\r\n".encode()
+        elif isinstance(data, StreamEntry):
+            data_in_list = []
+            for k, v in data.data.items():
+                data_in_list.append(k)
+                data_in_list.append(v)
+            return RespParser.encode([data.id, data_in_list])
         elif isinstance(data, int):
             return f":{data}\r\n".encode()
         elif isinstance(data, list):
@@ -34,6 +42,19 @@ class RespParser:
             return f"+{data}\r\n".encode()
         else:
             raise ValueError("Unsupported data type for encoding")
+
+    # @staticmethod
+    # def encode_stream_list(data: list[StreamEntry]) -> bytes:
+    #     pass
+
+    # @staticmethod
+    # def encode_stream(data: StreamEntry) -> bytes:
+    #     data_in_list = []
+    #     for k, v in data.data.items():
+    #         data_in_list.append(k)
+    #         data_in_list.append(v)
+
+    #     pass
 
     @staticmethod
     def decode(data: bytes, type: Literal["", "bulk", "rdb"] = ""):

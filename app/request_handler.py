@@ -1,5 +1,6 @@
 import asyncio
 
+import bisect
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -258,6 +259,30 @@ class RequestHandler:
                                 type="err",
                             ),
                         )
+                case "XRANGE":
+                    stream_key = input[1]
+                    start = StreamEntry(id=input[2], data={})
+                    end = StreamEntry(id=input[3], data={})
+                    if stream_key in self.container.keys():
+                        entries = self.container.get(stream_key).entries
+
+                        def key_func(item: StreamEntry):
+                            comp = item.id.split("-")
+                            x = 0.0
+                            x += float(comp[0])
+                            if len(comp) == 2:
+                                x += 0.1 * float(comp[1])
+                            return x
+
+                        start_id = bisect.bisect_left(entries, start, key=key_func)
+                        end_id_excl = bisect.bisect_left(entries, end, key=key_func)
+                        l = entries[start_id:end_id_excl]
+                        print("Range:", l)
+                        print("Encoded:", RespParser.encode(l, type="bulk"))
+                        return Response(200, RespParser.encode(l, type="bulk"))
+                    else:
+                        pass  # unknown key
+
         print("Unknown command")
         return Response(400, b"")
 
