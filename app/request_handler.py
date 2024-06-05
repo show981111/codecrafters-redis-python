@@ -284,7 +284,7 @@ class RequestHandler:
                 case "XREAD":
                     offset = 0
                     if input[1] == "block":
-                        offset = 3
+                        offset = 2
                         await asyncio.sleep(int(input[2]) / 1000)
                         # async with asyncio.timeout(int(input[2]) / 1000):
                         #     while self.responded_replica < int(input[1]):
@@ -321,7 +321,7 @@ class RequestHandler:
                                 200,
                                 RespParser.encode(res, type="bulk"),
                             )
-        print("Unknown command")
+        print(f"Unknown command {input}")
         return Response(400, b"")
 
     def get_info(self) -> str:
