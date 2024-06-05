@@ -23,7 +23,7 @@ class RespParser:
             for k, v in data.data.items():
                 data_in_list.append(k)
                 data_in_list.append(v)
-            return RespParser.encode([data.id, data_in_list])
+            return RespParser.encode([data.id, data_in_list], type)
         elif isinstance(data, int):
             return f":{data}\r\n".encode()
         elif isinstance(data, list):
