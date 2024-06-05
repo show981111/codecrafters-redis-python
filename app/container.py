@@ -1,6 +1,7 @@
+import bisect
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, Tuple
 
 
 @dataclass
@@ -104,6 +105,22 @@ class Container:
             else:
                 res.append(k)
         return res
+
+    def get_after_excl(self, stream_keys: list, starts: list) -> Tuple[list, int]:
+        entry_length = 0
+        res = []
+        for idx, stream_key in enumerate(stream_keys):
+            if stream_key in self.keys():
+                entries = self.get(stream_key).entries
+                start_excl = bisect.bisect_right(
+                    entries,
+                    StreamEntries.key_func(starts[idx]),
+                    key=StreamEntries.key_func,
+                )
+                entry_length += len(entries) - start_excl
+                res.append([stream_key, entries[start_excl:]])
+
+        return res, entry_length
 
     @staticmethod
     def _auto_populate(id: str) -> bool:

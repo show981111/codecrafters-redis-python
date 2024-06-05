@@ -1,5 +1,6 @@
-import asyncio
+from __future__ import annotations
 
+import asyncio
 import bisect
 from collections import defaultdict
 from dataclasses import dataclass
@@ -18,6 +19,41 @@ class Response:
         200, 201, 202, 203, 400
     ]  # 200 response to client, 201 response to master, 202 response to replica,203 replica connection establish, 400 error
     data: bytes | list[bytes]
+
+
+@dataclass
+class Xread:
+    block: bool
+    block_duration: int | None  # sec
+    stream_keys: list
+    starts: list
+
+    @staticmethod
+    def parse(input: list) -> Xread:
+        block = False
+        block_duration = None
+        offset = 0
+        if input[1] == "block":
+            offset = 2
+            block = True
+            block_duration = int(input[2]) / 1000
+
+        if input[offset + 1] == "streams":
+            stream_keys = []
+            starts = []
+            idx = 2 + offset
+            while idx < len(input) and not StreamEntry.validate_id_format(input[idx]):
+                stream_keys.append(input[idx])
+                idx += 1
+            while idx < len(input):
+                starts.append(StreamEntry(id=input[idx], data={}))
+                idx += 1
+
+            if len(stream_keys) != len(starts):
+                ValueError("Key and start id are not matching")
+            return Xread(block, block_duration, stream_keys, starts)
+        else:
+            ValueError(f"Unknown input {input}")
 
 
 class RequestHandler:
@@ -282,49 +318,33 @@ class RequestHandler:
                     else:
                         pass  # unknown key
                 case "XREAD":
-                    offset = 0
-                    if input[1] == "block":
-                        offset = 2
-                        await asyncio.sleep(int(input[2]) / 1000)
-                        # async with asyncio.timeout(int(input[2]) / 1000):
-                        #     while self.responded_replica < int(input[1]):
-                        #         await asyncio.sleep(0)
-                        #         continue
-                    if input[offset + 1] == "streams":
-                        entry_length = 0
-                        stream_keys = []
-                        starts = []
-                        idx = 2 + offset
-                        while idx < len(input) and not StreamEntry.validate_id_format(
-                            input[idx]
-                        ):
-                            stream_keys.append(input[idx])
-                            idx += 1
-                        while idx < len(input):
-                            starts.append(StreamEntry(id=input[idx], data={}))
-                            idx += 1
-
-                        if len(stream_keys) != len(starts):
-                            ValueError("Key and start id are not matching")
-                        else:
-                            res = []
-                            for idx, stream_key in enumerate(stream_keys):
-                                if stream_key in self.container.keys():
-                                    entries = self.container.get(stream_key).entries
-                                    start_excl = bisect.bisect_right(
-                                        entries,
-                                        StreamEntries.key_func(starts[idx]),
-                                        key=StreamEntries.key_func,
+                    xread = Xread.parse(input)
+                    if xread.block:
+                        if xread.block_duration > 0:
+                            await asyncio.sleep(
+                                xread.block_duration
+                            )  # Block this task for this period of time!
+                        else:  # block until there is an item added (busy wait)
+                            while result := self.container.get_after_excl(
+                                xread.stream_keys, xread.starts
+                            ):
+                                if result[1] > 0:
+                                    return Response(
+                                        200,
+                                        RespParser.encode(result[0], type="bulk"),
                                     )
-                                    entry_length += len(entries) - start_excl
-                                    res.append([stream_key, entries[start_excl:]])
-                            print("Result", res)
-                            if entry_length == 0:
-                                return Response(200, RespParser.encode(None))
-                            return Response(
-                                200,
-                                RespParser.encode(res, type="bulk"),
-                            )
+                                asyncio.sleep(0.1)
+
+                    res, entry_length = self.container.get_after_excl(
+                        xread.stream_keys, xread.starts
+                    )
+                    print("Result", res)
+                    if entry_length == 0:
+                        return Response(200, RespParser.encode(None))
+                    return Response(
+                        200,
+                        RespParser.encode(res, type="bulk"),
+                    )
         print(f"Unknown command {input}")
         return Response(400, b"")
 
