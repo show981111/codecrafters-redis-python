@@ -50,7 +50,7 @@ class Container:
                 id_of_last_entry = (
                     self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
                 )
-                value.id = Container._populate_entry_id(value.id, id_of_last_entry)
+                value.id = Container._get_next_if_auto(value.id, id_of_last_entry)
                 print(f"New value.id", value.id)
                 if not Container._less_than(id_of_last_entry, value.id):
                     raise ValueError(
@@ -58,7 +58,7 @@ class Container:
                     )
                 self.kv[key].value.entries.append(value)
             else:
-                value.id = Container._populate_entry_id(value.id)
+                value.id = Container._get_next_if_auto(value.id)
                 print(f"New value.id", value.id)
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
@@ -88,7 +88,7 @@ class Container:
         return False
 
     @staticmethod
-    def _populate_entry_id(id: str, id_of_last_entry: str | None = None) -> str:
+    def _get_next_if_auto(id: str, id_of_last_entry: str | None = None) -> str:
         components = id.split("-")
         if components[0] == "*":
             pass
@@ -97,6 +97,8 @@ class Container:
                 id_of_last_entry.split("-")[0]
             ) == int(components[0]):
                 last_seq = int(id_of_last_entry.split("-")[1])
+            elif id_of_last_entry is not None:
+                last_seq = -1
             else:
                 last_seq = 0
             components[1] = str(last_seq + 1)
