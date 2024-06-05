@@ -42,7 +42,9 @@ class Xread:
             stream_keys = []
             starts = []
             idx = 2 + offset
-            while idx < len(input) and not StreamEntry.validate_id_format(input[idx]):
+            while idx < len(input) and not StreamEntry.validate_input_id_format(
+                input[idx]
+            ):
                 stream_keys.append(input[idx])
                 idx += 1
             while idx < len(input):

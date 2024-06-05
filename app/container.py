@@ -18,13 +18,14 @@ class StreamEntry:
     data: dict
 
     @staticmethod
-    def validate_id_format(id: str) -> bool:
+    def validate_input_id_format(id: str) -> bool:
         comp = id.split("-")
         if (
             len(comp) != 2
             or len(comp[0]) > 13
             or not comp[0].isdigit()
             or not comp[1].isdigit()
+            or comp[0] == "$"
         ):
             return False
         return True
