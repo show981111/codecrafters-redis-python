@@ -291,6 +291,7 @@ class RequestHandler:
                         #         await asyncio.sleep(0)
                         #         continue
                     if input[offset + 1] == "streams":
+                        entry_length = 0
                         stream_keys = []
                         starts = []
                         idx = 2 + offset
@@ -315,9 +316,10 @@ class RequestHandler:
                                         StreamEntries.key_func(starts[idx]),
                                         key=StreamEntries.key_func,
                                     )
+                                    entry_length += len(entries) - start_excl
                                     res.append([stream_key, entries[start_excl:]])
                             print("Result", res)
-                            if len(res) == 0:
+                            if entry_length == 0:
                                 return Response(200, RespParser.encode(None))
                             return Response(
                                 200,
