@@ -274,8 +274,9 @@ class RequestHandler:
                                 x += 0.1 * float(comp[1])
                             return x
 
-                        start_id = bisect.bisect_left(entries, start, key=key_func)
-                        end_id_excl = bisect.bisect_left(entries, end, key=key_func)
+                        keys = [key_func(elem) for elem in entries]
+                        start_id = bisect.bisect_left(keys, start, key=key_func)
+                        end_id_excl = bisect.bisect_left(keys, end, key=key_func)
                         l = entries[start_id:end_id_excl]
                         print("Range:", l)
                         print("Encoded:", RespParser.encode(l, type="bulk"))
