@@ -317,6 +317,8 @@ class RequestHandler:
                                     )
                                     res.append([stream_key, entries[start_excl:]])
                             print("Result", res)
+                            if len(res) == 0:
+                                return Response(200, RespParser.encode(None))
                             return Response(
                                 200,
                                 RespParser.encode(res, type="bulk"),
