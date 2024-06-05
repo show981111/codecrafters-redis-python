@@ -9,10 +9,13 @@ class RespParser:
 
     @staticmethod
     def encode(
-        data: str | int | bytes | list | None, type: Literal["", "bulk", "rdb"] = ""
+        data: str | int | bytes | list | None,
+        type: Literal["", "bulk", "rdb", "err"] = "",
     ) -> bytes:
         if data is None:
             return f"$-1\r\n".encode()
+        elif type == "err":
+            return f"-{data}\r\n".encode()
         elif isinstance(data, int):
             return f":{data}\r\n".encode()
         elif isinstance(data, list):

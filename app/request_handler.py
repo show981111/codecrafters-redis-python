@@ -252,7 +252,10 @@ class RequestHandler:
                     except ValueError:
                         return Response(
                             200,
-                            "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n",
+                            RespParser.encode(
+                                "ERR The ID specified in XADD is equal or smaller than the target stream top item",
+                                type="err",
+                            ),
                         )
         print("Unknown command")
         return Response(400, b"")
