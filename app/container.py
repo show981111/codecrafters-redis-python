@@ -40,6 +40,10 @@ class Container:
     ):  # expiry input is in ms
         print(f"Set {key} = {value}, with expiry = {expire_at}")
         if isinstance(value, StreamEntry):
+            if not Container._less_than("0-0", value.id):
+                raise ValueError(
+                    f"ERR The ID specified in XADD must be greater than 0-0"
+                )
             if key in self.kv.keys():
                 id_of_last_entry = (
                     self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
@@ -50,10 +54,6 @@ class Container:
                     )
                 self.kv[key].value.entries.append(value)
             else:
-                if not Container._less_than("0-0", value.id):
-                    raise ValueError(
-                        f"ERR The ID specified in XADD must be greater than 0-0"
-                    )
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
                     created_at=datetime.now(),
