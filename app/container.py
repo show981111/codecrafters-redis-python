@@ -41,8 +41,15 @@ class Container:
         print(f"Set {key} = {value}, with expiry = {expire_at}")
         if isinstance(value, StreamEntry):
             if key in self.kv.keys():
+                id_of_last_entry = (
+                    self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
+                )
+                if not self._less_than(id_of_last_entry, value.id):
+                    raise ValueError(f"Invalid key {id_of_last_entry} >= {value.id}")
                 self.kv[key].value.entries.append(value)
             else:
+                if not self._less_than("0-0", value.id):
+                    raise ValueError(f"Invalid key 0-0 >= {value.id}")
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
                     created_at=datetime.now(),
@@ -62,3 +69,15 @@ class Container:
             else:
                 res.append(k)
         return res
+
+    def _less_than(a: str, b: str) -> bool:  # True if a < b
+        ac = a.split("-")
+        bc = b.split("-")
+        for i in range(2):
+            ac[i] = int(ac[i])
+            bc[i] = int(bc[i])
+        if ac[0] < bc[0]:
+            return True
+        elif ac[0] == bc[0] and ac[1] < bc[1]:
+            return True
+        return False

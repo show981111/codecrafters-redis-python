@@ -241,13 +241,19 @@ class RequestHandler:
                         if i + 1 >= len(input):
                             raise ValueError("Missing value")
                         data[input[i]] = input[i + 1]
-                    self.container.set(
-                        key=stream_key, value=StreamEntry(id=stream_id, data=data)
-                    )
-                    return Response(
-                        200,
-                        RespParser.encode(stream_id),
-                    )
+                    try:
+                        self.container.set(
+                            key=stream_key, value=StreamEntry(id=stream_id, data=data)
+                        )
+                        return Response(
+                            200,
+                            RespParser.encode(stream_id),
+                        )
+                    except ValueError:
+                        return Response(
+                            200,
+                            "-ERR The ID specified in XADD is equal or smaller than the target stream top item\r\n",
+                        )
         print("Unknown command")
         return Response(400, b"")
 
