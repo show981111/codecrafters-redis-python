@@ -105,7 +105,7 @@ class Container:
             elif id_of_last_entry is None or components[0] == "0":
                 last_seq = 0
             else:
-                last_seq = 1
+                last_seq = -1
             components[1] = str(last_seq + 1)
             return "-".join(components)
         else:
