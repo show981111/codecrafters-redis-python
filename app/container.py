@@ -89,9 +89,7 @@ class Container:
 
     @staticmethod
     def _populate_entry_id(id: str, id_of_last_entry: str | None = None) -> str:
-        print(f"{id}")
         components = id.split("-")
-        print(f"{components}")
         if components[0] == "*":
             pass
         elif components[1] == "*":
