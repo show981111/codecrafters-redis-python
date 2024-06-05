@@ -290,8 +290,10 @@ class RequestHandler:
                             input[idx]
                         ):
                             stream_keys.append(input[idx])
+                            idx += 1
                         while idx < len(input):
-                            starts.append(StreamEntry(id=input[3], data={}))
+                            starts.append(StreamEntry(id=input[idx], data={}))
+                            idx += 1
 
                         if len(stream_keys) != len(starts):
                             ValueError("Key and start id are not matching")
