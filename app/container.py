@@ -40,7 +40,9 @@ class Container:
     ):  # expiry input is in ms
         print(f"Set {key} = {value}, with expiry = {expire_at}")
         if isinstance(value, StreamEntry):
-            if not Container._less_than("0-0", value.id):
+            if not Container._less_than(
+                "0-0", value.id
+            ) and not Container._auto_populate(value.id):
                 raise ValueError(
                     f"ERR The ID specified in XADD must be greater than 0-0"
                 )
@@ -48,6 +50,7 @@ class Container:
                 id_of_last_entry = (
                     self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
                 )
+                value.id = Container._populate_entry_id(value.id, id_of_last_entry)
                 if not Container._less_than(id_of_last_entry, value.id):
                     raise ValueError(
                         f"ERR The ID specified in XADD is equal or smaller than the target stream top item"
@@ -73,6 +76,25 @@ class Container:
             else:
                 res.append(k)
         return res
+
+    @staticmethod
+    def _auto_populate(id: str) -> bool:
+        components = id.split("-")
+        if components[0] == "*" or components[1] == "*":
+            return True
+        return False
+
+    @staticmethod
+    def _populate_entry_id(id: str, id_of_last_entry: str | None = None) -> str:
+        components = id.split("-")
+        if components[0] == "*":
+            pass
+        elif components[1] == "*":
+            last_seq = int(id_of_last_entry.split("-")[1])
+            components[1] = str(last_seq + 1)
+            return "-".join(components)
+        else:
+            return id
 
     @staticmethod
     def _less_than(a: str, b: str) -> bool:  # True if a < b
