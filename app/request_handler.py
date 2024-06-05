@@ -286,7 +286,7 @@ class RequestHandler:
                         stream_keys = []
                         starts = []
                         idx = 2
-                        while idx < len(input) and StreamEntry.validate_id_format(
+                        while idx < len(input) and not StreamEntry.validate_id_format(
                             input[idx]
                         ):
                             stream_keys.append(input[idx])
