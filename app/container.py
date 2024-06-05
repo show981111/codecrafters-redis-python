@@ -121,7 +121,7 @@ class Container:
                     if len(entries) == 0:
                         starts[idx].id = "0-0"
                     else:
-                        starts[idx].id = entries[len(entries) - 1]
+                        starts[idx] = entries[len(entries) - 1]
                 start_excl = bisect.bisect_right(
                     entries,
                     StreamEntries.key_func(starts[idx]),
