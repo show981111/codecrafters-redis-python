@@ -116,12 +116,12 @@ class Container:
         for idx, stream_key in enumerate(stream_keys):
             if stream_key in self.keys():
                 entries = self.get(stream_key).entries
-                if starts[idx] == "$":
+                if starts[idx].id == "$":
                     # then set it to max so far
                     if len(entries) == 0:
-                        starts[idx] = "0-0"
+                        starts[idx].id = "0-0"
                     else:
-                        starts[idx] = entries[len(entries) - 1]
+                        starts[idx].id = entries[len(entries) - 1]
                 start_excl = bisect.bisect_right(
                     entries,
                     StreamEntries.key_func(starts[idx]),
