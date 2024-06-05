@@ -21,6 +21,19 @@ class StreamEntry:
 class StreamEntries:
     entries: list[StreamEntry]
 
+    @staticmethod
+    def key_func(item: StreamEntry) -> float:
+        if item.id == "-":
+            return 0
+        elif item.id == "+":
+            return float("inf")
+        comp = item.id.split("-")
+        x = 0.0
+        x += float(comp[0])
+        if len(comp) == 2:
+            x += 0.1 * float(comp[1])
+        return x
+
 
 class Container:
     def __init__(self) -> None:

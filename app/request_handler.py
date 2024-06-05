@@ -9,7 +9,7 @@ from typing import Literal, Tuple
 
 from app.rdb_parser import RdbParser
 from app.resp_parser import RespParser
-from app.container import Container, StreamEntry
+from app.container import Container, StreamEntries, StreamEntry
 
 
 @dataclass
@@ -266,30 +266,38 @@ class RequestHandler:
                     if stream_key in self.container.keys():
                         entries = self.container.get(stream_key).entries
 
-                        def key_func(item: StreamEntry) -> float:
-                            if item.id == "-":
-                                return 0
-                            elif item.id == "+":
-                                return float("inf")
-                            comp = item.id.split("-")
-                            x = 0.0
-                            x += float(comp[0])
-                            if len(comp) == 2:
-                                x += 0.1 * float(comp[1])
-                            return x
-
                         # keys = [key_func(elem) for elem in entries]
                         start_id = bisect.bisect_left(
-                            entries, key_func(start), key=key_func
+                            entries,
+                            StreamEntries.key_func(start),
+                            key=StreamEntries.key_func,
                         )
                         end_id_excl = bisect.bisect_right(
-                            entries, key_func(end), key=key_func
+                            entries,
+                            StreamEntries.key_func(end),
+                            key=StreamEntries.key_func,
                         )
                         l = entries[start_id:end_id_excl]
                         return Response(200, RespParser.encode(l, type="bulk"))
                     else:
                         pass  # unknown key
-
+                case "XREAD":
+                    if input[1] == "streams":
+                        stream_key = input[2]
+                        if stream_key in self.container.keys():
+                            entries = self.container.get(stream_key).entries
+                            excl = bisect.bisect_right(
+                                entries,
+                                StreamEntries.key_func(end),
+                                key=StreamEntries.key_func,
+                            )
+                            # if excl < len(entries):
+                            return Response(
+                                200,
+                                RespParser.encode(
+                                    [[stream_key, [entries[excl:]]]], type="bulk"
+                                ),
+                            )
         print("Unknown command")
         return Response(400, b"")
 
