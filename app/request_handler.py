@@ -293,6 +293,13 @@ class RequestHandler:
                                 key=StreamEntries.key_func,
                             )
                             # if excl < len(entries):
+                            print("Xread", entries[start_excl:])
+                            print(
+                                "Encoded",
+                                RespParser.encode(
+                                    [[stream_key, [entries[start_excl:]]]], type="bulk"
+                                ),
+                            )
                             return Response(
                                 200,
                                 RespParser.encode(
