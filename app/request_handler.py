@@ -333,7 +333,7 @@ class RequestHandler:
                                         200,
                                         RespParser.encode(result[0], type="bulk"),
                                     )
-                                asyncio.sleep(0.1)
+                                await asyncio.sleep(0.1)
 
                     res, entry_length = self.container.get_after_excl(
                         xread.stream_keys, xread.starts
