@@ -51,6 +51,7 @@ class Container:
                     self.kv[key].value.entries[len(self.kv[key].value.entries) - 1].id
                 )
                 value.id = Container._populate_entry_id(value.id, id_of_last_entry)
+                print(f"New value.id", value.id)
                 if not Container._less_than(id_of_last_entry, value.id):
                     raise ValueError(
                         f"ERR The ID specified in XADD is equal or smaller than the target stream top item"
