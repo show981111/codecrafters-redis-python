@@ -91,8 +91,10 @@ class Container:
     def _get_next_if_auto(id: str, id_of_last_entry: str | None = None) -> str:
         components = id.split("-")
         if components[0] == "*":
-            pass
-        elif components[1] == "*":
+            components[0] = datetime.now().microsecond * 1000
+            components.append("*")
+
+        if components[1] == "*":
             if id_of_last_entry is not None and int(
                 id_of_last_entry.split("-")[0]
             ) == int(components[0]):
