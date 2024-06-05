@@ -58,7 +58,8 @@ class Container:
                     )
                 self.kv[key].value.entries.append(value)
             else:
-                value.id = Container._populate_entry_id(value.id, id_of_last_entry)
+                value.id = Container._populate_entry_id(value.id)
+                print(f"New value.id", value.id)
                 self.kv[key] = Element(
                     value=StreamEntries(entries=[value]),
                     created_at=datetime.now(),
