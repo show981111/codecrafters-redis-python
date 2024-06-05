@@ -102,7 +102,7 @@ class Container:
                 and id_of_last_entry.split("-")[0] == components[0]
             ):
                 last_seq = int(id_of_last_entry.split("-")[1])
-            elif id_of_last_entry is None or components[0] == "0":
+            elif components[0] == "0":
                 last_seq = 0
             else:
                 last_seq = -1
