@@ -303,7 +303,7 @@ class RequestHandler:
                             return Response(
                                 200,
                                 RespParser.encode(
-                                    [[stream_key, [entries[start_excl:]]]], type="bulk"
+                                    [[stream_key, entries[start_excl:]]], type="bulk"
                                 ),
                             )
         print("Unknown command")
