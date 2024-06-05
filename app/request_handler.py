@@ -278,7 +278,7 @@ class RequestHandler:
                         start_id = bisect.bisect_left(
                             entries, key_func(start), key=key_func
                         )
-                        end_id_excl = bisect.bisect_left(
+                        end_id_excl = bisect.bisect_right(
                             entries, key_func(end), key=key_func
                         )
                         l = entries[start_id:end_id_excl]
