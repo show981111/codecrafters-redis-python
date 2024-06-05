@@ -290,7 +290,7 @@ class RequestHandler:
                         #     while self.responded_replica < int(input[1]):
                         #         await asyncio.sleep(0)
                         #         continue
-                    if input[offset] == "streams":
+                    if input[offset + 1] == "streams":
                         stream_keys = []
                         starts = []
                         idx = 2 + offset
