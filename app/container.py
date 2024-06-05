@@ -16,6 +16,18 @@ class StreamEntry:
     id: str
     data: dict
 
+    @staticmethod
+    def validate_id_format(id: str) -> bool:
+        comp = id.split("-")
+        if (
+            len(comp) != 2
+            or len(comp[0]) > 13
+            or not comp[0].isdigit()
+            or not comp[1].isdigit()
+        ):
+            return False
+        return True
+
 
 @dataclass
 class StreamEntries:

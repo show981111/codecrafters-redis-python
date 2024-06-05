@@ -283,28 +283,33 @@ class RequestHandler:
                         pass  # unknown key
                 case "XREAD":
                     if input[1] == "streams":
-                        stream_key = input[2]
-                        if stream_key in self.container.keys():
-                            entries = self.container.get(stream_key).entries
-                            start = StreamEntry(id=input[3], data={})
-                            start_excl = bisect.bisect_right(
-                                entries,
-                                StreamEntries.key_func(start),
-                                key=StreamEntries.key_func,
-                            )
-                            # if excl < len(entries):
-                            print("Xread", entries[start_excl:])
-                            print(
-                                "Encoded",
-                                RespParser.encode(
-                                    [[stream_key, [entries[start_excl:]]]], type="bulk"
-                                ),
-                            )
+                        stream_keys = []
+                        starts = []
+                        idx = 2
+                        while idx < len(input) and StreamEntry.validate_id_format(
+                            input[idx]
+                        ):
+                            stream_keys.append(input[idx])
+                        while idx < len(input):
+                            starts.append(StreamEntry(id=input[3], data={}))
+
+                        if len(stream_keys) != len(starts):
+                            ValueError("Key and start id are not matching")
+                        else:
+                            res = []
+                            for idx, stream_key in enumerate(stream_keys):
+                                if stream_key in self.container.keys():
+                                    entries = self.container.get(stream_key).entries
+                                    start_excl = bisect.bisect_right(
+                                        entries,
+                                        StreamEntries.key_func(starts[idx]),
+                                        key=StreamEntries.key_func,
+                                    )
+                                    res.append([stream_key, entries[start_excl:]])
+                            print("Result", res)
                             return Response(
                                 200,
-                                RespParser.encode(
-                                    [[stream_key, entries[start_excl:]]], type="bulk"
-                                ),
+                                RespParser.encode(res, type="bulk"),
                             )
         print("Unknown command")
         return Response(400, b"")
