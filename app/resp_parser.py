@@ -43,19 +43,6 @@ class RespParser:
         else:
             raise ValueError("Unsupported data type for encoding")
 
-    # @staticmethod
-    # def encode_stream_list(data: list[StreamEntry]) -> bytes:
-    #     pass
-
-    # @staticmethod
-    # def encode_stream(data: StreamEntry) -> bytes:
-    #     data_in_list = []
-    #     for k, v in data.data.items():
-    #         data_in_list.append(k)
-    #         data_in_list.append(v)
-
-    #     pass
-
     @staticmethod
     def decode(data: bytes, type: Literal["", "bulk", "rdb"] = ""):
         end = data.find(b"\r\n")

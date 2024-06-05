@@ -266,7 +266,11 @@ class RequestHandler:
                     if stream_key in self.container.keys():
                         entries = self.container.get(stream_key).entries
 
-                        def key_func(item: StreamEntry):
+                        def key_func(item: StreamEntry) -> float:
+                            if item.id == "-":
+                                return 0
+                            elif item.id == "+":
+                                return float("inf")
                             comp = item.id.split("-")
                             x = 0.0
                             x += float(comp[0])
@@ -282,8 +286,6 @@ class RequestHandler:
                             entries, key_func(end), key=key_func
                         )
                         l = entries[start_id:end_id_excl]
-                        print("Range:", l)
-                        print("Encoded:", RespParser.encode(l, type="bulk"))
                         return Response(200, RespParser.encode(l, type="bulk"))
                     else:
                         pass  # unknown key
