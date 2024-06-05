@@ -282,10 +282,18 @@ class RequestHandler:
                     else:
                         pass  # unknown key
                 case "XREAD":
-                    if input[1] == "streams":
+                    offset = 0
+                    if input[1] == "block":
+                        offset = 3
+                        await asyncio.sleep(int(input[2]) / 1000)
+                        # async with asyncio.timeout(int(input[2]) / 1000):
+                        #     while self.responded_replica < int(input[1]):
+                        #         await asyncio.sleep(0)
+                        #         continue
+                    if input[offset] == "streams":
                         stream_keys = []
                         starts = []
-                        idx = 2
+                        idx = 2 + offset
                         while idx < len(input) and not StreamEntry.validate_id_format(
                             input[idx]
                         ):
