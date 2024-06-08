@@ -1,3 +1,12 @@
+Learning points
+
+1. Replication (leader-follower model)
+   Typically a leader handles write operations and followers handle read operations. Followers update their info based on the leader. 
+2. Asyncio of Python (single-threaded but super fast for handling I/O bottleneck)
+   Asynchronous programming is just like cooperative multi-tasking. Yield the control to different tasks when it is waiting for something.
+   Using `yield` and `generator` from Python, the event loop loops all tasks that are generators and runs that task until it yields. 
+
+
 [![progress-banner](https://backend.codecrafters.io/progress/redis/2fe37859-3698-4854-886a-e2351e5fc91f)](https://app.codecrafters.io/users/show981111?r=2qF)
 
 This is a starting point for Python solutions to the
